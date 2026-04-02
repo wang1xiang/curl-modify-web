@@ -191,12 +191,13 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     case 'PARSE_CURL': {
       try {
         const parsed = parseCurlCommand(request.curlCmd)
-        let bodyJson = null
+        let bodyJson: Record<string, unknown> | null = null
         if (parsed.body) {
           try {
             bodyJson = JSON.parse(parsed.body)
           } catch {
-            bodyJson = parsed.body
+            // 如果解析失败，尝试将字符串作为值
+            bodyJson = { value: parsed.body }
           }
         }
         sendResponse({
