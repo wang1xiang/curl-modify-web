@@ -19,7 +19,8 @@
     "activeTab",
     "contextMenus",
     "clipboardWrite",
-    "clipboardRead"
+    "clipboardRead",
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>"
