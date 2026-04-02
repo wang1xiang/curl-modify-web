@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curl 修改工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .dark { color-scheme: dark; }
+    .json-key { color: #0550ae; }
+    .json-string { color: #0a3069; }
+    .json-number { color: #0550ae; }
+    .json-boolean { color: #cf222e; }
+    .json-null { color: #6e7781; }
+    .dark .json-key { color: #79c0ff; }
+    .dark .json-string { color: #a5d6ff; }
+    .dark .json-number { color: #79c0ff; }
+    .dark .json-boolean { color: #ff7b72; }
+    .dark .json-null { color: #8b949e; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
+  <div id="app" class="h-screen flex flex-col">
+    <!-- 顶部栏 -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        Curl 修改工具
+      </h1>
+      <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <svg id="sunIcon" class="w-5 h-5 text-gray-600 dark:text-gray-300 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moonIcon" class="w-5 h-5 text-gray-600 dark:text-gray-300 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex overflow-hidden">
+      <!-- 左侧面板：Curl 输入 -->
+      <div id="leftPanel" class="border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800" style="width: 33.333%">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between cursor-pointer" id="toggleLeft">
+          <h2 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Curl 命令
+          </h2>
+          <svg id="leftChevron" class="w-4 h-4 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </div>
+        <div id="leftContent" class="flex-1 overflow-auto p-4">
+          <!-- 已保存的接口 -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">已保存的接口</h3>
+            </div>
+            <div id="savedEndpoints" class="space-y-1 max-h-32 overflow-auto"></div>
+          </div>
+
+          <textarea id="curlInput" class="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="在此粘贴 curl 命令..."></textarea>
+          <div class="flex gap-2 mt-3">
+            <button id="parseBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              解析
+            </button>
+            <button id="saveBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+              </svg>
+              保存
+            </button>
+          </div>
+          <div id="parsedInfo" class="mt-4 hidden">
+            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 space-y-2">
+              <div class="flex items-center gap-2">
+                <span id="methodBadge" class="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">-</span>
+                <span id="parsedUrl" class="text-sm text-gray-600 dark:text-gray-300 truncate">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中间面板：字段修改 -->
+      <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+            字段修改
+          </h2>
+        </div>
+        <div class="flex-1 overflow-auto p-4">
+          <!-- Headers 修改区域（可折叠） -->
+          <div id="headersSection" class="mb-4 hidden">
+            <button id="toggleHeaders" class="w-full flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+              <span>Headers</span>
+              <svg id="headersChevron" class="w-4 h-4 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div id="headersContent" class="mt-2 space-y-2 hidden">
+            </div>
+          </div>
+
+          <div id="fieldsList" class="space-y-3">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">请先解析 curl 命令...</p>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">修改预览</h3>
+            <pre id="jsonPreview" class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-sm font-mono overflow-auto max-h-48 text-gray-700 dark:text-gray-300"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧面板：发送和结果 -->
+      <div id="rightPanel" class="flex flex-col bg-white dark:bg-gray-800" style="width: 33.333%">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between cursor-pointer" id="toggleRight">
+          <h2 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            发送请求
+          </h2>
+          <svg id="rightChevron" class="w-4 h-4 text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </div>
+        <div id="rightContent" class="flex-1 overflow-auto p-4">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">发送次数</label>
+              <input type="number" id="sendCount" value="1" min="1" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex gap-2">
+              <button id="previewBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors">
+                预览
+              </button>
+              <button id="sendBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                发送
+              </button>
+            </div>
+            <div id="progressBar" class="hidden">
+              <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <span>发送中...</span>
+                <span id="progressText">0/0</span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div id="progressFill" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+              </div>
+            </div>
+            <div id="results" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 状态管理
+    const state = {
+      parsed: null,
+      bodyJson: null,
+      modifiers: {},
+      headerMods: {},
+      darkMode: localStorage.getItem('darkMode') === 'true',
+      headersExpanded: false,
+      leftExpanded: true,
+      rightExpanded: true
+    };
+
+    // DOM 元素
+    const elements = {
+      curlInput: document.getElementById('curlInput'),
+      parseBtn: document.getElementById('parseBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+      savedEndpoints: document.getElementById('savedEndpoints'),
+      parsedInfo: document.getElementById('parsedInfo'),
+      methodBadge: document.getElementById('methodBadge'),
+      parsedUrl: document.getElementById('parsedUrl'),
+      fieldsList: document.getElementById('fieldsList'),
+      jsonPreview: document.getElementById('jsonPreview'),
+      sendCount: document.getElementById('sendCount'),
+      previewBtn: document.getElementById('previewBtn'),
+      sendBtn: document.getElementById('sendBtn'),
+      progressBar: document.getElementById('progressBar'),
+      progressText: document.getElementById('progressText'),
+      progressFill: document.getElementById('progressFill'),
+      results: document.getElementById('results'),
+      themeToggle: document.getElementById('themeToggle'),
+      headersSection: document.getElementById('headersSection'),
+      toggleHeaders: document.getElementById('toggleHeaders'),
+      headersContent: document.getElementById('headersContent'),
+      headersChevron: document.getElementById('headersChevron'),
+      leftPanel: document.getElementById('leftPanel'),
+      toggleLeft: document.getElementById('toggleLeft'),
+      leftContent: document.getElementById('leftContent'),
+      leftChevron: document.getElementById('leftChevron'),
+      rightPanel: document.getElementById('rightPanel'),
+      toggleRight: document.getElementById('toggleRight'),
+      rightContent: document.getElementById('rightContent'),
+      rightChevron: document.getElementById('rightChevron')
+    };
+
+    // 左侧面板折叠
+    elements.toggleLeft.addEventListener('click', () => {
+      state.leftExpanded = !state.leftExpanded;
+      if (state.leftExpanded) {
+        elements.leftPanel.style.width = '33.333%';
+        elements.leftContent.classList.remove('hidden');
+        elements.leftChevron.classList.remove('rotate-180');
+      } else {
+        elements.leftPanel.style.width = 'auto';
+        elements.leftContent.classList.add('hidden');
+        elements.leftChevron.classList.add('rotate-180');
+      }
+    });
+
+    // 右侧面板折叠
+    elements.toggleRight.addEventListener('click', () => {
+      state.rightExpanded = !state.rightExpanded;
+      if (state.rightExpanded) {
+        elements.rightPanel.style.width = '33.333%';
+        elements.rightContent.classList.remove('hidden');
+        elements.rightChevron.classList.remove('rotate-180');
+      } else {
+        elements.rightPanel.style.width = 'auto';
+        elements.rightContent.classList.add('hidden');
+        elements.rightChevron.classList.add('rotate-180');
+      }
+    });
+
+    // 保存的接口管理
+    function getSavedEndpoints() {
+      const saved = localStorage.getItem('savedEndpoints');
+      return saved ? JSON.parse(saved) : [];
+    }
+
+    function saveEndpoint(name, curlCmd) {
+      const endpoints = getSavedEndpoints();
+      endpoints.push({ id: Date.now(), name, curlCmd });
+      localStorage.setItem('savedEndpoints', JSON.stringify(endpoints));
+      renderSavedEndpoints();
+    }
+
+    function deleteEndpoint(id) {
+      const endpoints = getSavedEndpoints().filter(e => e.id !== id);
+      localStorage.setItem('savedEndpoints', JSON.stringify(endpoints));
+      renderSavedEndpoints();
+    }
+
+    function renderSavedEndpoints() {
+      const endpoints = getSavedEndpoints();
+      if (endpoints.length === 0) {
+        elements.savedEndpoints.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400">暂无保存的接口</p>';
+        return;
+      }
+
+      elements.savedEndpoints.innerHTML = endpoints.map(ep => `
+        <div class="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg group hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer" data-curl="${encodeURIComponent(ep.curlCmd)}">
+          <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">${escapeHtml(ep.name)}</span>
+          <button class="delete-endpoint opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 dark:hover:bg-red-900 rounded transition-all" data-id="${ep.id}">
+            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+
+      elements.savedEndpoints.querySelectorAll('[data-curl]').forEach(el => {
+        el.addEventListener('click', async (e) => {
+          if (e.target.closest('.delete-endpoint')) return;
+          const curlCmd = decodeURIComponent(el.dataset.curl);
+          elements.curlInput.value = curlCmd;
+          await parseCurl(curlCmd);
+        });
+      });
+
+      elements.savedEndpoints.querySelectorAll('.delete-endpoint').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteEndpoint(parseInt(btn.dataset.id));
+        });
+      });
+    }
+
+    // 初始化主题
+    function initTheme() {
+      if (state.darkMode) {
+        document.documentElement.classList.add('dark');
+      }
+    }
+
+    elements.themeToggle.addEventListener('click', () => {
+      state.darkMode = !state.darkMode;
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('darkMode', state.darkMode);
+    });
+
+    // 语法高亮 JSON
+    function syntaxHighlight(json) {
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'json-key';
+          } else {
+            cls = 'json-string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+          cls = 'json-null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
+    }
+
+    // 渲染 Headers
+    function renderHeaders() {
+      if (!state.parsed || !state.parsed.headers) {
+        elements.headersSection.classList.add('hidden');
+        return;
+      }
+
+      elements.headersSection.classList.remove('hidden');
+
+      const headers = state.parsed.headers;
+      state.headerMods = { ...headers };
+
+      elements.headersContent.innerHTML = Object.entries(headers).map(([key, value]) => `
+        <div class="flex gap-2">
+          <input type="text" class="header-key flex-1 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400" value="${escapeHtml(key)}" data-key="${escapeHtml(key)}" readonly>
+          <input type="text" class="header-value flex-2 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" value="${escapeHtml(value)}" data-key="${escapeHtml(key)}">
+        </div>
+      `).join('');
+
+      elements.headersContent.querySelectorAll('.header-value').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const key = e.target.dataset.key;
+          state.headerMods[key] = e.target.value;
+        });
+      });
+
+      if (state.headersExpanded) {
+        elements.headersContent.classList.remove('hidden');
+        elements.headersChevron.classList.add('rotate-180');
+      }
+    }
+
+    // 切换 Headers 折叠
+    elements.toggleHeaders.addEventListener('click', () => {
+      state.headersExpanded = !state.headersExpanded;
+      elements.headersContent.classList.toggle('hidden');
+      elements.headersChevron.classList.toggle('rotate-180');
+    });
+
+    // 扁平化 JSON 对象
+    function flattenObject(obj, prefix = '') {
+      const result = [];
+      for (const [key, value] of Object.entries(obj)) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          result.push(...flattenObject(value, path));
+        } else {
+          result.push({ path, value, type: typeof value });
+        }
+      }
+      return result;
+    }
+
+    // 渲染字段列表
+    function renderFields() {
+      if (!state.bodyJson) {
+        elements.fieldsList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">请先解析 curl 命令...</p>';
+        return;
+      }
+
+      const fields = flattenObject(state.bodyJson);
+      elements.fieldsList.innerHTML = fields.map(field => `
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <code class="text-sm text-gray-700 dark:text-gray-300">${field.path}</code>
+            <span class="text-xs text-gray-500 dark:text-gray-400">${field.type}</span>
+          </div>
+          <div class="flex gap-2">
+            <select class="mod-type flex-1 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${field.path}">
+              <option value="none">不修改</option>
+              <option value="fixed">固定值</option>
+              <option value="int">随机整数</option>
+              <option value="string">随机字符串</option>
+              <option value="date">随机日期</option>
+              <option value="phone">随机手机号</option>
+              <option value="email">随机邮箱</option>
+              <option value="url">随机网址</option>
+              <option value="list">列表选择</option>
+            </select>
+          </div>
+          <div class="mod-options hidden" data-path="${field.path}"></div>
+        </div>
+      `).join('');
+
+      elements.fieldsList.querySelectorAll('.mod-type').forEach(select => {
+        select.addEventListener('change', (e) => {
+          const path = e.target.dataset.path;
+          const type = e.target.value;
+          const optionsDiv = elements.fieldsList.querySelector(`.mod-options[data-path="${path}"]`);
+
+          if (type === 'none') {
+            delete state.modifiers[path];
+            optionsDiv.classList.add('hidden');
+          } else {
+            optionsDiv.classList.remove('hidden');
+            renderModOptions(path, type, optionsDiv);
+          }
+          updatePreview();
+        });
+      });
+    }
+
+    function renderModOptions(path, type, container) {
+      let html = '';
+      switch (type) {
+        case 'fixed':
+          html = `<input type="text" class="mod-spec w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="fixed" placeholder="输入固定值...">`;
+          break;
+        case 'int':
+          html = `<div class="flex gap-2"><input type="number" class="mod-spec flex-1 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="int-min" value="1" placeholder="最小值"><input type="number" class="mod-spec flex-1 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="int-max" value="100" placeholder="最大值"></div>`;
+          break;
+        case 'string':
+          html = `<div class="flex gap-2">
+            <input type="number" class="mod-spec flex-1 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="string-len" value="8" placeholder="长度">
+            <select class="mod-spec flex-1 p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="string-lang">
+              <option value="mix">中英数混合</option>
+              <option value="zh">中文</option>
+              <option value="en">英文</option>
+              <option value="num">数字</option>
+            </select>
+          </div>`;
+          break;
+        case 'date':
+          html = `<input type="text" class="mod-spec w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="date" value="YYYY-MM-DD HH:mm:ss" placeholder="日期格式">`;
+          break;
+        case 'list':
+          html = `<input type="text" class="mod-spec w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" data-path="${path}" data-type="list" placeholder="用逗号分隔的值...">`;
+          break;
+        case 'phone':
+        case 'email':
+        case 'url':
+          html = `<p class="text-xs text-gray-500 dark:text-gray-400">无需配置，自动生成</p>`;
+          break;
+      }
+      container.innerHTML = html;
+
+      container.querySelectorAll('.mod-spec').forEach(input => {
+        const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
+        input.addEventListener(eventType, () => {
+          updateModifier(path);
+          updatePreview();
+        });
+      });
+
+      updateModifier(path);
+      updatePreview();
+    }
+
+    function updateModifier(path) {
+      const select = elements.fieldsList.querySelector(`.mod-type[data-path="${path}"]`);
+      const type = select.value;
+      const container = elements.fieldsList.querySelector(`.mod-options[data-path="${path}"]`);
+
+      let spec = '';
+      switch (type) {
+        case 'fixed':
+          spec = container.querySelector('.mod-spec[data-type="fixed"]').value;
+          if (/^-?\d+$/.test(spec)) spec = parseInt(spec, 10);
+          else if (/^-?\d+\.\d+$/.test(spec)) spec = parseFloat(spec);
+          else if (spec === 'true') spec = true;
+          else if (spec === 'false') spec = false;
+          else if (spec === 'null') spec = null;
+          break;
+        case 'int':
+          const min = container.querySelector('.mod-spec[data-type="int-min"]').value;
+          const max = container.querySelector('.mod-spec[data-type="int-max"]').value;
+          spec = `${min}-${max}`;
+          break;
+        case 'string':
+          const len = container.querySelector('.mod-spec[data-type="string-len"]').value;
+          const lang = container.querySelector('.mod-spec[data-type="string-lang"]').value;
+          spec = `${len}:${lang}`;
+          break;
+        case 'date':
+          spec = container.querySelector('.mod-spec[data-type="date"]').value;
+          break;
+        case 'list':
+          spec = container.querySelector('.mod-spec[data-type="list"]').value;
+          break;
+        case 'phone':
+        case 'email':
+        case 'url':
+          spec = '';
+          break;
+      }
+
+      state.modifiers[path] = { type, spec };
+    }
+
+    function updatePreview() {
+      if (!state.bodyJson) {
+        elements.jsonPreview.textContent = '';
+        return;
+      }
+
+      const preview = JSON.parse(JSON.stringify(state.bodyJson));
+      for (const [path, mod] of Object.entries(state.modifiers)) {
+        let value = mod.spec;
+        if (mod.type === 'int') {
+          const [min, max] = mod.spec.split('-').map(Number);
+          value = Math.floor((min + max) / 2);
+        } else if (mod.type === 'string') {
+          const parts = (mod.spec || '8:mix').split(':');
+          const len = parseInt(parts[0]) || 8;
+          const lang = parts[1] || 'mix';
+          if (lang === 'zh') {
+            value = '测试字符串';
+          } else if (lang === 'en') {
+            value = 'TestStr';
+          } else if (lang === 'num') {
+            value = '123456';
+          } else {
+            value = 'Abc123';
+          }
+        } else if (mod.type === 'date') {
+          value = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        } else if (mod.type === 'list') {
+          value = mod.spec.split(',')[0] || '';
+        } else if (mod.type === 'phone') {
+          value = '13800138000';
+        } else if (mod.type === 'email') {
+          value = 'example@gmail.com';
+        } else if (mod.type === 'url') {
+          value = 'https://example.com';
+        }
+        setNestedValue(preview, path, value);
+      }
+
+      elements.jsonPreview.innerHTML = syntaxHighlight(JSON.stringify(preview, null, 2));
+    }
+
+    function setNestedValue(obj, path, value) {
+      const parts = path.split('.');
+      let current = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!(parts[i] in current)) current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = value;
+    }
+
+    async function parseCurl(curlCmd) {
+      if (!curlCmd) return;
+
+      try {
+        const res = await fetch('/api/parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ curlCmd })
+        });
+        const data = await res.json();
+
+        console.log('Parse response:', data);
+
+        if (data.success) {
+          state.parsed = data.parsed;
+          state.bodyJson = data.bodyJson;
+          state.modifiers = {};
+
+          elements.parsedInfo.classList.remove('hidden');
+          elements.methodBadge.textContent = data.parsed.method;
+          elements.parsedUrl.textContent = data.parsed.url;
+
+          console.log('Body JSON:', state.bodyJson);
+
+          // 渲染 Headers
+          renderHeaders();
+
+          if (!state.bodyJson) {
+            elements.fieldsList.innerHTML = '<p class="text-red-500 dark:text-red-400 text-sm">未能解析 JSON body，请检查 curl 命令格式</p>';
+            elements.jsonPreview.textContent = '';
+          } else {
+            renderFields();
+            updatePreview();
+          }
+        } else {
+          elements.fieldsList.innerHTML = `<p class="text-red-500 dark:text-red-400 text-sm">解析失败: ${data.error || '未知错误'}</p>`;
+        }
+      } catch (e) {
+        console.error(e);
+        elements.fieldsList.innerHTML = `<p class="text-red-500 dark:text-red-400 text-sm">请求错误: ${e.message}</p>`;
+      }
+    }
+
+    elements.parseBtn.addEventListener('click', async () => {
+      const curlCmd = elements.curlInput.value.trim();
+      await parseCurl(curlCmd);
+    });
+
+    elements.previewBtn.addEventListener('click', async () => {
+      if (!state.parsed) return;
+      await generateAndShow(true);
+    });
+
+    elements.sendBtn.addEventListener('click', async () => {
+      if (!state.parsed) return;
+      await generateAndShow(false);
+    });
+
+    async function generateAndShow(previewOnly) {
+      const count = parseInt(elements.sendCount.value) || 1;
+
+      elements.results.innerHTML = '';
+      elements.progressBar.classList.remove('hidden');
+      elements.progressText.textContent = `0/${count}`;
+      elements.progressFill.style.width = '0%';
+
+      try {
+        const genRes = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parsed: state.parsed, modifiers: state.modifiers, headerMods: state.headerMods, count })
+        });
+        const genData = await genRes.json();
+
+        if (!genData.success) throw new Error(genData.error);
+
+        for (let i = 0; i < genData.requests.length; i++) {
+          const req = genData.requests[i];
+          elements.progressText.textContent = `${i + 1}/${count}`;
+          elements.progressFill.style.width = `${((i + 1) / count) * 100}%`;
+
+          const resultDiv = document.createElement('div');
+          resultDiv.className = 'bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3';
+          resultDiv.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">请求 #${i + 1}</span>
+              <span class="status-badge text-xs px-2 py-0.5 rounded ${previewOnly ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'}">${previewOnly ? '预览' : '等待...'}</span>
+            </div>
+            <pre class="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto max-h-24">${escapeHtml(req.body)}</pre>
+            <div class="response-container mt-2 hidden"></div>
+          `;
+          elements.results.appendChild(resultDiv);
+
+          if (!previewOnly) {
+            try {
+              const sendRes = await fetch('/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ curlCmd: req.curlCmd })
+              });
+              const sendData = await sendRes.json();
+
+              const statusBadge = resultDiv.querySelector('.status-badge');
+              const responseContainer = resultDiv.querySelector('.response-container');
+
+              if (sendData.success) {
+                statusBadge.textContent = '成功';
+                statusBadge.className = 'status-badge text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                responseContainer.classList.remove('hidden');
+                try {
+                  const jsonResp = JSON.parse(sendData.stdout);
+                  responseContainer.innerHTML = `<pre class="text-xs font-mono bg-green-50 dark:bg-green-900/30 p-2 rounded overflow-auto max-h-40">${syntaxHighlight(JSON.stringify(jsonResp, null, 2))}</pre>`;
+                } catch {
+                  responseContainer.innerHTML = `<pre class="text-xs font-mono bg-green-50 dark:bg-green-900/30 p-2 rounded overflow-auto max-h-40 text-green-800 dark:text-green-200">${escapeHtml(sendData.stdout)}</pre>`;
+                }
+              } else {
+                statusBadge.textContent = '失败';
+                statusBadge.className = 'status-badge text-xs px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                responseContainer.classList.remove('hidden');
+                responseContainer.innerHTML = `<pre class="text-xs font-mono bg-red-50 dark:bg-red-900/30 p-2 rounded overflow-auto max-h-40 text-red-800 dark:text-red-200">${escapeHtml(sendData.error)}</pre>`;
+              }
+            } catch (e) {
+              const statusBadge = resultDiv.querySelector('.status-badge');
+              statusBadge.textContent = '错误';
+              statusBadge.className = 'status-badge text-xs px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+            }
+          }
+
+          await new Promise(r => setTimeout(r, 100));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      elements.progressBar.classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // 保存按钮事件
+    elements.saveBtn.addEventListener('click', () => {
+      const curlCmd = elements.curlInput.value.trim();
+      if (!curlCmd) {
+        alert('请先粘贴 curl 命令');
+        return;
+      }
+
+      const name = prompt('请输入接口名称（例如：更新用户信息）：');
+      if (name && name.trim()) {
+        saveEndpoint(name.trim(), curlCmd);
+        alert('保存成功！');
+      }
+    });
+
+    initTheme();
+    renderSavedEndpoints();
+  </script>
+</body>
+</html>

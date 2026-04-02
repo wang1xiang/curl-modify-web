@@ -1,0 +1,32 @@
+const testCurl = `curl 'https://creatorapi2.qmpoa.com/api/orm/sWeVCWCMiyD/update' \
+  -H 'accept: application/json, text/plain, */*' \
+  -H 'accept-language: zh-CN,zh;q=0.9,en;q=0.8,fr;q=0.7' \
+  -H 'authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJyZWxlYXNlIiwiaWF0IjoxNzc0OTQ2OTY0LCJuYmYiOjE3NzQ5NDY5NjQsInNhbHQiOiI2NDcwNjIiLCJzcmMiOjQsInRlYW1fdXVpZCI6IjE5MjYxZmUyYTcwZGRjZDZmMzY5NTQ4NzBmM2ZkYmY2IiwidXNlcl91dWlkIjoiOTRlZjU3MmIxYWVlNTU5MzhiMDcyNTQ0YmMyNmI1YzUiLCJ3YXkiOjJ9.qAM2vBatvZ_6HItpdG4ApaYeNzmMJZDDmXANu0odyek' \
+  -H 'content-type: application/json; charset=UTF-8' \
+  -H 'origin: http://localhost:5173' \
+  -H 'priority: u=1, i' \
+  -H 'referer: http://localhost:5173/' \
+  -H 'sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "macOS"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: cross-site' \
+  -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36' \
+  --data-raw '{"row_id":7,"field_data":{"f_mecx8jkk":"234","f_oo3tz8r0":"2026-04-02 12:43:34"}}'`;
+
+// 简单的 curl 解析器测试
+const cleanCmd = testCurl.replace(/\\\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
+console.log('Clean cmd:', cleanCmd.substring(0, 200) + '...');
+
+// 简单测试用正则提取 body
+const dataRawMatch = testCurl.match(/--data-raw\s+(['"])(.*?)\1/);
+if (dataRawMatch) {
+  console.log('\nFound body:', dataRawMatch[2]);
+  try {
+    const json = JSON.parse(dataRawMatch[2]);
+    console.log('Parsed JSON:', json);
+  } catch (e) {
+    console.log('Parse error:', e);
+  }
+}
