@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "Curl 修改工具",
+    "description": "浏览器扩展名称"
+  },
+  "extensionDescription": {
+    "message": "强大的 Curl 请求修改和测试工具 - 支持字段动态修改、批量发送等功能",
+    "description": "浏览器扩展描述"
+  }
+}
