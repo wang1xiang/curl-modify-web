@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { setNestedValue } from '@/utils/json'
+import { Code, CheckCircle, XCircle } from 'lucide-react'
 
 export function JsonPreview() {
   const bodyJson = useAppStore((state) => state.bodyJson)
@@ -154,7 +155,7 @@ export function JsonPreview() {
       setEditableJson(JSON.stringify(preview, null, 2))
       setJsonError('')
     } catch (e) {
-      setJsonError('生成预览失败：' + String(e))
+      setJsonError('Failed to generate preview: ' + String(e))
     }
   }, [bodyJson, modifiers])
 
@@ -176,27 +177,34 @@ export function JsonPreview() {
   if (!bodyJson) return null
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          JSON 预览与编辑
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <Code className="w-3.5 h-3.5" />
+          Output JSON Payload
         </label>
         {jsonError ? (
-          <span className="text-xs text-red-500 dark:text-red-400 font-medium">JSON 格式错误</span>
+          <span className="flex items-center gap-1 text-xs text-rose-500 font-bold">
+            <XCircle className="w-3 h-3" />
+            Invalid JSON
+          </span>
         ) : (
-          <span className="text-xs text-green-500 dark:text-green-400 font-medium">JSON 格式正确</span>
+          <span className="flex items-center gap-1 text-xs text-emerald-500 font-bold">
+            <CheckCircle className="w-3 h-3" />
+            Valid JSON
+          </span>
         )}
       </div>
       <textarea
-        className={`w-full h-96 font-mono text-sm p-4 rounded-xl border bg-gray-900 text-gray-100 resize-y focus-ring ${
-          jsonError ? 'border-red-500 dark:border-red-600' : 'border-gray-800'
+        className={`input-gemini h-96 font-mono text-xs resize-y custom-scrollbar ${
+          jsonError ? 'border-rose-500 focus:ring-rose-500/50 focus:border-rose-500/50' : ''
         }`}
         value={editableJson}
         onChange={handleJsonChange}
         spellCheck={false}
       />
       {jsonError && (
-        <p className="text-xs text-red-500 dark:text-red-400 font-mono bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-900/30">
+        <p className="text-xs text-rose-400 font-mono bg-rose-500/10 p-2 rounded-xl border border-rose-500/20">
           {jsonError}
         </p>
       )}

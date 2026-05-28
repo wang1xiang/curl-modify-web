@@ -1,4 +1,4 @@
-import { Send, ChevronRight } from 'lucide-react'
+import { Send, ChevronRight, Activity } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { RequestSender } from '@/components/request/RequestSender'
 import { ProgressBar } from '@/components/request/ProgressBar'
@@ -10,76 +10,121 @@ export function RightPanel() {
 
   return (
     <div
-      className="flex flex-col bg-white dark:bg-gray-900"
-      style={{ width: rightExpanded ? '33.333%' : 'auto', minWidth: rightExpanded ? '320px' : 'auto' }}
+      className={`relative border-l border-white/5 flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] glass-panel ${
+        rightExpanded ? 'w-1/3 min-w-[360px]' : 'w-16 min-w-[64px]'
+      }`}
     >
       <div
-        className="panel-header flex items-center justify-between cursor-pointer select-none"
+        className="panel-header-gemini flex items-center justify-between cursor-pointer select-none group"
         onClick={() => setRightExpanded(!rightExpanded)}
       >
-        <div className="flex items-center gap-2">
-          <Send className="w-5 h-5 text-cta-500" />
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-xl transition-all duration-300 ${rightExpanded ? 'bg-primary-500/10 text-primary-400' : 'bg-transparent text-slate-400 group-hover:bg-white/5'}`}>
+            <Send className="w-5 h-5" />
+          </div>
           {rightExpanded && (
-            <h2 className="font-semibold text-gray-900 dark:text-white">
-              发送请求
+            <h2 className="font-bold text-slate-100 tracking-tight">
+              执行 <span className="text-slate-500 font-medium">控制台</span>
             </h2>
           )}
         </div>
-        <ChevronRight
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${rightExpanded ? 'rotate-180' : ''}`}
-        />
+        <div className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${!rightExpanded ? 'hidden' : ''}`}>
+          <ChevronRight
+            className={`w-4 h-4 text-slate-500 transition-transform duration-300 ${rightExpanded ? 'rotate-180' : ''}`}
+          />
+        </div>
       </div>
+
+      {!rightExpanded && (
+        <div className="flex-1 flex flex-col items-center py-6 gap-6 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-primary-400 cursor-pointer transition-colors" title="执行结果">
+            <Activity className="w-4 h-4" />
+          </div>
+        </div>
+      )}
+
       {rightExpanded && (
-        <div className="flex-1 overflow-auto p-5">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-auto custom-scrollbar p-6 space-y-8">
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">控制区</h3>
+            </div>
             <div className="space-y-4">
               <RequestSender />
               <ProgressBar />
             </div>
-            <div className="space-y-3">
-              {results.map((result, index) => (
-                <div
-                  key={index}
-                  className="card p-4"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      请求 #{result.request.index}
-                    </span>
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        result.isPreview
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200'
-                          : result.result?.success
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200'
-                            : result.result
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
-                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {result.isPreview ? '预览' : result.result?.success ? '成功' : result.result ? '失败' : '等待...'}
-                    </span>
-                  </div>
-                  <pre className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-auto max-h-24">
-                    {result.request.body}
-                  </pre>
-                  {result.result && !result.isPreview && (
-                    <div className="mt-3">
-                      {result.result.success ? (
-                        <pre className="text-xs font-mono bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 p-3 rounded-lg overflow-auto max-h-40 border border-green-200 dark:border-green-900/30">
-                          {result.result.stdout}
-                        </pre>
-                      ) : (
-                        <pre className="text-xs font-mono bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-3 rounded-lg overflow-auto max-h-40 border border-red-200 dark:border-red-900/30">
-                          {result.result.error}
-                        </pre>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+          </section>
+
+          <section className="space-y-6 pt-2">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1 h-4 bg-accent-500 rounded-full"></div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">请求日志</h3>
             </div>
-          </div>
+            <div className="space-y-4">
+              {results.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 glass-card border-dashed">
+                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4 text-slate-600">
+                    <Activity className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-500">暂无请求记录</p>
+                  <p className="text-xs text-slate-600 mt-1">执行 curl 命令后查看结果</p>
+                </div>
+              ) : (
+                results.map((result, index) => (
+                  <div
+                    key={index}
+                    className="glass-card p-4 space-y-4 overflow-hidden relative group"
+                  >
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary-500/50"></div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded-md">
+                          请求 #{result.request.index}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
+                          result.isPreview
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : result.result?.success
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : result.result
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                        }`}
+                      >
+                        {result.isPreview ? '预览' : result.result?.success ? '成功' : result.result ? '失败' : '等待中...'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">负载</div>
+                      <pre className="text-[11px] font-mono text-slate-400 bg-slate-950/50 p-3 rounded-xl border border-white/5 overflow-auto max-h-24 custom-scrollbar">
+                        {result.request.body}
+                      </pre>
+                    </div>
+
+                    {result.result && !result.isPreview && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight ml-1">响应</div>
+                        {result.result.success ? (
+                          <pre className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10 overflow-auto max-h-40 custom-scrollbar">
+                            {result.result.stdout}
+                          </pre>
+                        ) : (
+                          <pre className="text-[11px] font-mono text-rose-400/90 bg-rose-500/5 p-3 rounded-xl border border-rose-500/10 overflow-auto max-h-40 custom-scrollbar">
+                            {result.result.error}
+                          </pre>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         </div>
       )}
     </div>

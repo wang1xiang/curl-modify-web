@@ -14,32 +14,39 @@ export function HeaderEditor() {
     <div className="space-y-3">
       <button
         onClick={() => setHeadersExpanded(!headersExpanded)}
-        className="w-full flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+        className="w-full flex items-center justify-between p-3 glass-card group transition-all duration-300"
       >
-        <span className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-gray-500" />
-          Headers
+        <span className="flex items-center gap-3 text-xs font-bold text-slate-300 tracking-tight">
+          <div className="p-1.5 rounded-lg bg-white/5 text-slate-500 group-hover:text-primary-400 group-hover:bg-primary-500/10 transition-colors">
+            <Layers className="w-3.5 h-3.5" />
+          </div>
+          请求头配置
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${headersExpanded ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-300 ${headersExpanded ? 'rotate-180 text-primary-400' : ''}`}
         />
       </button>
       {headersExpanded && (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
           {Object.entries(headerMods).map(([key, value]) => (
-            <div key={key} className="flex gap-2">
-              <input
-                type="text"
-                readOnly
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium"
-                value={key}
-              />
-              <input
-                type="text"
-                className="flex-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus-ring"
-                value={value}
-                onChange={(e) => setHeaderMod(key, e.target.value)}
-              />
+            <div key={key} className="flex gap-2 group/item">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  readOnly
+                  className="w-full px-3 py-2 text-[11px] font-mono border border-white/5 rounded-lg bg-white/5 text-slate-500 cursor-default"
+                  value={key}
+                />
+              </div>
+              <div className="flex-[2]">
+                <input
+                  type="text"
+                  className="input-gemini !py-2 !text-[11px] !px-3"
+                  placeholder="值..."
+                  value={value}
+                  onChange={(e) => setHeaderMod(key, e.target.value)}
+                />
+              </div>
             </div>
           ))}
         </div>

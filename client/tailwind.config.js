@@ -9,50 +9,53 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       colors: {
         primary: {
-          DEFAULT: '#2563EB',
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
+          DEFAULT: '#0052FF',
+          50: '#E6EEFF',
+          500: '#0052FF',
         },
-        cta: {
-          DEFAULT: '#F97316',
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#F97316',
-          600: '#EA580C',
-          700: '#C2410C',
-          800: '#9A3412',
-          900: '#7C2D12',
+        accent: {
+          DEFAULT: '#6366F1',
+          500: '#6366F1',
         },
-        surface: {
-          light: '#F8FAFC',
-          dark: '#020617',
+        bg: {
+          primary: { light: '#F8FAFC', dark: '#020617' },
+          card: { light: '#FFFFFF', dark: '#0F172A' },
+          glass: { light: 'rgba(0,0,0,0.03)', dark: 'rgba(255,255,255,0.05)' },
         },
         text: {
-          light: '#1E293B',
-          dark: '#E2E8F0',
+          primary: { light: '#0F172A', dark: '#F1F5F9' },
+          secondary: { light: '#64748B', dark: '#94A3B8' },
         },
         border: {
           light: '#E2E8F0',
-          dark: '#1E293B',
-        },
+          dark: 'rgba(255,255,255,0.1)',
+        }
+      },
+      borderRadius: {
+        '2xl': '16px',
+        '3xl': '24px',
       },
       boxShadow: {
-        'glow-blue': '0 0 20px rgba(37, 99, 235, 0.3)',
-        'glow-orange': '0 0 20px rgba(249, 115, 22, 0.3)',
+        'soft': '0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+      },
+      backgroundImage: {
+        'gemini': 'linear-gradient(135deg, #0052FF 0%, #6366F1 50%, #EC4899 100%)',
+      },
+      animation: {
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'blob': 'blob 7s infinite',
+      },
+      keyframes: {
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
+        },
       },
     },
   },

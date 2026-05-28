@@ -1,4 +1,4 @@
-import { Play, Eye } from 'lucide-react'
+import { Play, Eye, Repeat } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { generateRequests, sendRequest } from '@/services/api'
 
@@ -65,35 +65,38 @@ export function RequestSender() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          发送次数
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 px-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <Repeat className="w-3.5 h-3.5" />
+          执行次数
         </label>
         <input
           type="number"
           value={sendCount}
           min="1"
+          max="50"
           onChange={(e) => setSendCount(parseInt(e.target.value) || 1)}
-          className="input-field"
+          className="input-gemini !py-2.5 !text-xs !px-4"
+          disabled={isSending}
         />
       </div>
       <div className="flex gap-3">
         <button
           onClick={() => handleGenerateAndSend(true)}
           disabled={!parsed || isSending}
-          className="btn-secondary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-ghost flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Eye className="w-5 h-5" />
-          预览
+          <Eye className="w-4 h-4" />
+          仅预览
         </button>
         <button
           onClick={() => handleGenerateAndSend(false)}
           disabled={!parsed || isSending}
-          className="btn-cta flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-gemini flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Play className="w-5 h-5" />
-          {isSending ? '发送中...' : '发送'}
+          <Play className="w-4 h-4" />
+          {isSending ? '执行中...' : '发送请求'}
         </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { Trash2, FolderOpen } from 'lucide-react'
+import { Trash2, Hash } from 'lucide-react'
 import { useSavedEndpoints } from '@/hooks/useSavedEndpoints'
 import { useAppStore } from '@/store/useAppStore'
 import { parseCurl } from '@/services/api'
@@ -22,36 +22,33 @@ export function SavedEndpoints() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-          <FolderOpen className="w-4 h-4 text-gray-500" />
-          已保存的接口
-        </h3>
-      </div>
       {endpoints.length === 0 ? (
-        <div className="text-center py-6 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-          <p className="text-sm">暂无保存的接口</p>
+        <div className="flex flex-col items-center justify-center py-8 px-4 glass-card border-dashed">
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Archive Empty</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-40 overflow-auto">
+        <div className="space-y-2 max-h-48 overflow-auto custom-scrollbar pr-1">
           {endpoints.map((ep) => (
             <div
               key={ep.id}
-              className="group flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 cursor-pointer"
+              className="group flex items-center gap-3 p-3 glass-card cursor-pointer relative overflow-hidden"
               onClick={() => handleEndpointClick(ep.curlCmd)}
             >
-              <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate font-medium">
+              <div className="p-1.5 rounded-lg bg-white/5 text-slate-500 group-hover:text-primary-400 group-hover:bg-primary-500/10 transition-colors">
+                <Hash className="w-3.5 h-3.5" />
+              </div>
+              <span className="flex-1 text-xs text-slate-300 truncate font-semibold tracking-tight">
                 {ep.name}
               </span>
               <button
-                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200"
+                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-rose-500/10 rounded-lg transition-all duration-300"
                 onClick={(e) => {
                   e.stopPropagation()
                   deleteEndpoint(ep.id)
                 }}
-                aria-label="删除"
+                aria-label="Delete"
               >
-                <Trash2 className="w-4 h-4 text-red-500" />
+                <Trash2 className="w-3.5 h-3.5 text-rose-500/70" />
               </button>
             </div>
           ))}

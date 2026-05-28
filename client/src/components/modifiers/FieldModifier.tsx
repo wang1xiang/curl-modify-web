@@ -3,6 +3,7 @@ import { flattenObject } from '@/utils/json'
 import { ModifierOptions } from './ModifierOptions'
 import type { Modifier } from '@/types'
 import { useState } from 'react'
+import { Grid, ChevronDown, MinusCircle } from 'lucide-react'
 
 export function FieldModifier() {
   const bodyJson = useAppStore((state) => state.bodyJson)
@@ -41,8 +42,12 @@ export function FieldModifier() {
 
   if (!jsonObj) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-        <p className="text-sm">请先解析 curl 命令...</p>
+      <div className="flex flex-col items-center justify-center py-12 px-4 glass-card border-dashed">
+        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4 text-slate-600">
+          <Grid className="w-6 h-6" />
+        </div>
+        <p className="text-sm font-medium text-slate-500">暂无解析的 JSON 数据</p>
+        <p className="text-xs text-slate-600 mt-1">请解析包含 JSON 请求体的 curl 命令</p>
       </div>
     )
   }
@@ -123,19 +128,22 @@ export function FieldModifier() {
         return (
           <div
             key={field.path}
-            className="card p-4 space-y-3"
+            className="glass-card p-4 space-y-3 relative group"
           >
+            {modifier && modifier.type !== 'none' && (
+              <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
+            )}
             <div className="flex items-center justify-between">
-              <code className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+              <code className="text-sm text-slate-300 font-mono tracking-tight">
                 {field.path}
               </code>
-              <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-medium">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-bold uppercase tracking-wider">
                 {field.type}
               </span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <select
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus-ring"
+                className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
                 value={modifier?.type || 'none'}
                 onChange={(e) => handleTypeChange(field.path, e.target.value as Modifier['type'])}
               >
@@ -149,6 +157,15 @@ export function FieldModifier() {
                 <option value="url">随机网址</option>
                 <option value="list">列表选择</option>
               </select>
+              {modifier && modifier.type !== 'none' && (
+                <button 
+                  onClick={() => removeModifier(field.path)}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all duration-200"
+                  title="移除修改器"
+                >
+                  <MinusCircle className="w-4 h-4" />
+                </button>
+              )}
             </div>
             {modifier && modifier.type !== 'none' && (
               <ModifierOptions
@@ -168,100 +185,119 @@ export function FieldModifier() {
         return (
           <div
             key={parentPath}
-            className="card p-4 space-y-3"
+            className="glass-card p-4 space-y-3 relative group"
           >
+            {modifier && modifier.type !== 'none' && (
+              <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
+            )}
             <div className="flex items-center justify-between">
-              <code className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+              <code className="text-sm text-slate-300 font-mono tracking-tight flex items-center gap-2">
                 {parentPath}
-                <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                <span className="px-1.5 py-0.5 text-[10px] bg-primary-500/10 text-primary-400 rounded border border-primary-500/20 font-bold uppercase tracking-wider">
                   数组
                 </span>
               </code>
-              <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-medium">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-bold uppercase tracking-wider">
                 {elements[0]?.type || 'unknown'}[]
               </span>
             </div>
 
             {/* 数组级别的控制：不修改 / 动态生成 */}
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-3 items-center">
               <select
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus-ring"
+                className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
                 value={modifier ? 'array' : 'none'}
                 onChange={(e) => handleArrayTypeChange(parentPath, e.target.value as 'none' | 'array')}
               >
                 <option value="none">不修改</option>
-                <option value="array">动态生成数组</option>
+                <option value="array">动态数组生成</option>
               </select>
+              {modifier && (
+                 <button 
+                  onClick={() => removeModifier(parentPath)}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all duration-200"
+                  title="移除修改器"
+                >
+                  <MinusCircle className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* 动态生成数组个数 */}
             {modifier && (
-              <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <label className="text-xs text-gray-500 dark:text-gray-400">生成数量:</label>
+              <div className="flex items-center gap-3 p-3 glass-card">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">生成数量:</label>
                 <input
                   type="number"
                   min="1"
                   max="50"
                   value={modifier.arrayCount || 3}
                   onChange={(e) => handleArrayCountChange(parentPath, parseInt(e.target.value) || 1)}
-                  className="w-20 px-2 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="input-gemini w-20 !py-2 !px-3 !text-xs"
                 />
-                <span className="text-xs text-gray-400">个元素</span>
+                <span className="text-xs text-slate-500">个</span>
               </div>
             )}
 
             {/* 数组元素字段列表 */}
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div
-                className="flex items-center gap-2 cursor-pointer select-none"
+            <div className="mt-3 pt-3 border-t border-white/5">
+              <button
+                className="w-full flex items-center gap-2 cursor-pointer select-none group/toggle px-1 py-2 rounded-lg hover:bg-white/5 transition-colors"
                 onClick={() => toggleArrayExpand(parentPath)}
               >
-                <svg
-                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                    expandedArrays.has(parentPath) ? 'rotate-90' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  数组元素字段 ({elements.length} 个)
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${expandedArrays.has(parentPath) ? 'rotate-180 text-primary-400' : ''}`}
+                />
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  数组元素 ({elements.length})
                 </p>
-              </div>
+              </button>
               {expandedArrays.has(parentPath) && (
-                <div className="space-y-2 mt-2">
+                <div className="space-y-3 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
                   {elements.map((elem) => {
                     const elemModifier = modifiers[elem.path]
                     return (
                       <div
                         key={elem.path}
-                        className="p-2 pl-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg"
+                        className="glass-card p-3 pl-5 space-y-3 relative group"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <code className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        {elemModifier && elemModifier.type !== 'none' && (
+                          <div className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <code className="text-xs text-slate-400 font-mono tracking-tight">
                             {elem.path}
                           </code>
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-500 font-bold uppercase tracking-wider">
                             {elem.type}
                           </span>
                         </div>
-                        <select
-                          className="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus-ring"
-                          value={elemModifier?.type || 'none'}
-                          onChange={(e) => handleTypeChange(elem.path, e.target.value as Modifier['type'])}
-                        >
-                          <option value="none">不修改</option>
-                          <option value="fixed">固定值</option>
-                          <option value="int">随机整数</option>
-                          <option value="string">随机字符串</option>
-                          <option value="date">随机日期</option>
-                          <option value="phone">随机手机号</option>
-                          <option value="email">随机邮箱</option>
-                          <option value="url">随机网址</option>
-                          <option value="list">列表选择</option>
-                        </select>
+                        <div className="flex gap-3">
+                          <select
+                            className="input-gemini flex-1 !py-2.5 !px-4 !text-xs"
+                            value={elemModifier?.type || 'none'}
+                            onChange={(e) => handleTypeChange(elem.path, e.target.value as Modifier['type'])}
+                          >
+                            <option value="none">不修改</option>
+                            <option value="fixed">固定值</option>
+                            <option value="int">随机整数</option>
+                            <option value="string">随机字符串</option>
+                            <option value="date">随机日期</option>
+                            <option value="phone">随机手机号</option>
+                            <option value="email">随机邮箱</option>
+                            <option value="url">随机网址</option>
+                            <option value="list">列表选择</option>
+                          </select>
+                           {elemModifier && elemModifier.type !== 'none' && (
+                            <button 
+                              onClick={() => removeModifier(elem.path)}
+                              className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all duration-200"
+                              title="移除修改器"
+                            >
+                              <MinusCircle className="w-4 h-4" />
+                            </button>
+                           )}
+                        </div>
                         {elemModifier && elemModifier.type !== 'none' && (
                           <div className="mt-2">
                             <ModifierOptions

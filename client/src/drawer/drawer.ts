@@ -40,25 +40,6 @@
         box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
         position: relative;
       }
-      .close-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: rgba(0, 0, 0, 0.1);
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-      }
-      .close-btn:hover {
-        background: rgba(0, 0, 0, 0.2);
-      }
       iframe {
         width: 100%;
         height: 100%;
@@ -66,7 +47,6 @@
       }
     </style>
     <div class="drawer">
-      <button class="close-btn" onclick="this.getRootNode().host.style.display='none'">&times;</button>
       <iframe src="${chrome.runtime.getURL('popup.html')}"></iframe>
     </div>
   `
