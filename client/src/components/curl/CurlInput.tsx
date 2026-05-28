@@ -13,7 +13,9 @@ export function CurlInput() {
     if (!curlInput.trim()) return
     try {
       const data = await parseCurl(curlInput)
+      console.log('Parse result:', data)
       if (data.success && data.parsed) {
+        console.log('bodyJson type:', typeof data.bodyJson, 'value:', data.bodyJson)
         setParsed(data.parsed, data.bodyJson || null)
       }
     } catch (e) {

@@ -22,10 +22,6 @@ export default defineConfig({
 
         // 复制图标
         await cp('icons', 'dist/icons', { recursive: true })
-
-        // 复制 content.css 到根目录
-        const contentCss = path.resolve(__dirname, 'dist/assets/content-hXzoWJHr.css')
-        await copyFile(contentCss, 'dist/content.css')
       },
     },
   ],
@@ -42,15 +38,15 @@ export default defineConfig({
         popup: path.resolve(__dirname, 'popup.html'),
         index: path.resolve(__dirname, 'index.html'),
         background: path.resolve(__dirname, 'src/background/background.ts'),
-        content: path.resolve(__dirname, 'src/content/content.ts'),
+        drawer: path.resolve(__dirname, 'src/drawer/drawer.ts'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
           if (chunkInfo.name === 'background') {
             return 'background.js'
           }
-          if (chunkInfo.name === 'content') {
-            return 'content.js'
+          if (chunkInfo.name === 'drawer') {
+            return 'drawer.js'
           }
           return 'assets/[name]-[hash].js'
         },
@@ -68,4 +64,5 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  base: './',
 })

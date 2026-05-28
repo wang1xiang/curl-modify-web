@@ -1,10 +1,20 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import Popup from './Popup.tsx'
+import App from '../App.tsx'
 import '../index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// 设置 popup 窗口样式 - 必须在渲染前设置
+const rootElement = document.getElementById('root')
+if (rootElement) {
+  rootElement.style.width = '100%'
+  rootElement.style.height = '100%'
+}
+
+// 直接在 popup 中打开完整版应用
+ReactDOM.createRoot(rootElement!).render(
   <React.StrictMode>
-    <Popup />
+    <div style={{ width: '100%', height: '100%' }}>
+      <App />
+    </div>
   </React.StrictMode>
 )

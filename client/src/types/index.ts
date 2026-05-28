@@ -8,6 +8,7 @@ export interface ParsedCurl {
 export interface Modifier {
   type: 'none' | 'fixed' | 'int' | 'string' | 'date' | 'phone' | 'email' | 'url' | 'list'
   spec: string
+  arrayCount?: number  // 数组元素生成数量，仅当字段是数组时使用
 }
 
 export interface SavedEndpoint {

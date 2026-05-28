@@ -2,6 +2,22 @@
 
 // Background Service Worker for Curl 修改工具 Extension
 
+// 点击扩展图标时，在当前页面注入抽屉
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab.id) return
+
+  // 注入抽屉脚本
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['drawer.js'],
+  })
+
+  // 然后发送消息打开抽屉
+  setTimeout(async () => {
+    await chrome.tabs.sendMessage(tab.id!, { type: 'OPEN_DRAWER' })
+  }, 500)
+})
+
 // 简单的 curl 命令解析器
 function parseCurlCommand(curlCmd: string): { method: string; url: string; headers: Record<string, string>; body?: string } {
   const result: { method: string; url: string; headers: Record<string, string>; body?: string } = {
@@ -16,11 +32,34 @@ function parseCurlCommand(curlCmd: string): { method: string; url: string; heade
     result.method = methodMatch[1]
   }
 
-  // 提取 URL（第一个非选项参数）
-  const urlMatch = curlCmd.match(/curl\s+['"]([^'"]+)['"]/) || curlCmd.match(/curl\s+(\S+)/)
-  if (urlMatch) {
-    result.url = urlMatch[1].replace(/^['"]|['"]$/g, '')
+  // 提取 URL（第一个非选项参数，通常是 curl 命令后的第一个 URL 字符串）
+  // 处理格式：curl 'URL' -X POST ...  或  curl -X POST 'URL' ...
+  let urlValue = ''
+
+  // 方法 1: 先尝试匹配 curl 后紧跟的 URL（排除 -X 等选项）
+  // 匹配 curl 后面第一个以 http 开头的引号内容
+  const urlMatch1 = curlCmd.match(/curl\s+['"]?(https?:\/\/[^'"\s]+)['"]?/)
+  if (urlMatch1) {
+    urlValue = urlMatch1[1]
   }
+
+  // 方法 2: 尝试匹配 -X METHOD 之后的 URL
+  if (!urlValue) {
+    const urlMatch2 = curlCmd.match(/-X\s+\w+\s+['"]?(https?:\/\/[^'"\s]+)['"]?/)
+    if (urlMatch2) {
+      urlValue = urlMatch2[1]
+    }
+  }
+
+  // 方法 3: 尝试匹配第一个出现的 http URL（任何位置）
+  if (!urlValue) {
+    const urlMatch3 = curlCmd.match(/['"]?(https?:\/\/[^'"\s]+)['"]?/)
+    if (urlMatch3) {
+      urlValue = urlMatch3[1]
+    }
+  }
+
+  result.url = urlValue
 
   // 提取 headers
   const headerMatches = curlCmd.matchAll(/-H\s+['"]([^:]+):\s*([^'"]+)['"]/g)
@@ -28,10 +67,17 @@ function parseCurlCommand(curlCmd: string): { method: string; url: string; heade
     result.headers[match[1].trim()] = match[2].trim()
   }
 
-  // 提取 body
-  const bodyMatch = curlCmd.match(/-d\s+['"](.+)['"]/) || curlCmd.match(/--data\s+['"](.+)['"]/)
+  // 提取 body（支持 -d, --data, --data-raw, --data-binary 等多种形式）
+  const bodyMatch = curlCmd.match(/-d\s+['"](.+)['"]/)
+    || curlCmd.match(/--data\s+['"](.+)['"]/)
+    || curlCmd.match(/--data-raw\s+['"](.+)['"]/)
+    || curlCmd.match(/--data-binary\s+['"](.+)['"]/)
   if (bodyMatch) {
     result.body = bodyMatch[1]
+    // 如果有 body 但没有显式指定 method，默认为 POST
+    if (!methodMatch) {
+      result.method = 'POST'
+    }
   }
 
   return result
@@ -46,14 +92,18 @@ function generateValue(spec: { type: string; spec: string }): unknown {
       return specStr
 
     case 'int': {
-      const [min, max] = specStr.split('-').map(Number)
+      // 处理 spec 为空的情况，使用默认值 1-100
+      const specParts = (specStr || '1-100').split('-')
+      const min = parseInt(specParts[0]) || 1
+      const max = parseInt(specParts[1]) || 100
       return Math.floor(Math.random() * (max - min + 1)) + min
     }
 
     case 'string': {
-      const parts = specStr.split(':')
-      const length = parseInt(parts[0]) || 8
-      const lang = parts[1] || 'mix'
+      // 处理 spec 为空的情况，使用默认值 8:mix
+      const specParts = (specStr || '8:mix').split(':')
+      const length = parseInt(specParts[0]) || 8
+      const lang = specParts[1] || 'mix'
       const chars = {
         zh: '测试字符串',
         en: 'TestString',
@@ -78,6 +128,8 @@ function generateValue(spec: { type: string; spec: string }): unknown {
       return 'https://example.com'
 
     case 'list':
+      // 如果是数组标记，返回空字符串（数组本身由 GENERATE_REQUESTS 处理）
+      if (specStr === 'array') return ''
       return specStr.split(',')[0] || ''
 
     default:
@@ -219,16 +271,93 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         const { parsed, modifiers, headerMods, count } = request
         const requests = []
 
+        console.log('[GENERATE_REQUESTS] modifiers:', modifiers)
+
+        // 分离数组修改器和普通修改器
+        const arrayModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
+        const normalModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
+        const arrayElementModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
+
+        for (const [path, mod] of Object.entries(modifiers as Record<string, { type: string; spec: string; arrayCount?: number }>)) {
+          if (path.includes('[')) {
+            // 数组元素修改器，如 order[0].column
+            arrayElementModifiers[path] = mod
+            console.log('[GENERATE_REQUESTS] arrayElementModifiers:', path, mod)
+          } else if (mod.spec === 'array' && mod.arrayCount && mod.arrayCount > 0) {
+            // 数组修改器（spec 为 'array' 且有 arrayCount）
+            arrayModifiers[path] = mod
+            console.log('[GENERATE_REQUESTS] arrayModifiers:', path, mod)
+          } else {
+            // 普通修改器
+            normalModifiers[path] = mod
+            console.log('[GENERATE_REQUESTS] normalModifiers:', path, mod)
+          }
+        }
+
         for (let i = 0; i < count; i++) {
           let bodyObj = parsed.body ? JSON.parse(parsed.body) : {}
 
-          // 应用修改器
-          for (const [path, mod] of Object.entries(modifiers as Record<string, { type: string; spec: string }>)) {
+          // 1. 先应用普通修改器
+          for (const [path, mod] of Object.entries(normalModifiers)) {
             const value = generateValue(mod)
             setNestedValue(bodyObj, path, value)
           }
 
+          // 2. 处理数组修改器（生成数组）
+          for (const [arrayPath, arrayMod] of Object.entries(arrayModifiers)) {
+            const arrayCount = arrayMod.arrayCount || 3
+
+            // 收集该数组的元素修改器，并区分是对象数组还是简单数组
+            const elementMods: Record<string, { type: string; spec: string }> = {}
+            let hasNestedFields = false
+
+            for (const [elemPath, elemMod] of Object.entries(arrayElementModifiers)) {
+              if (elemPath.startsWith(arrayPath + '[')) {
+                // 提取内部路径
+                // order[0].column -> column (对象数组)
+                // column[0] -> 空 (简单数组)
+                const restPath = elemPath.replace(arrayPath + '[0]', '')
+                const innerPath = restPath.startsWith('.') ? restPath.slice(1) : ''
+
+                if (innerPath) {
+                  hasNestedFields = true
+                }
+                elementMods[innerPath || 'value'] = elemMod
+                console.log('[GENERATE_REQUESTS] elementMods:', innerPath || 'value', elemMod, 'hasNestedFields:', hasNestedFields)
+              }
+            }
+
+            console.log('[GENERATE_REQUESTS] generating array:', arrayPath, 'count:', arrayCount, 'elementMods:', elementMods, 'hasNestedFields:', hasNestedFields)
+
+            // 生成数组
+            const arrayValue = []
+            for (let j = 0; j < arrayCount; j++) {
+              if (hasNestedFields && Object.keys(elementMods).length > 0) {
+                // 对象数组：为每个元素生成对象
+                const obj: Record<string, unknown> = {}
+                for (const [innerPath, elemMod] of Object.entries(elementMods)) {
+                  if (innerPath === 'value') continue // 跳过简单数组的 value 键
+                  obj[innerPath] = generateValue(elemMod)
+                  console.log('[GENERATE_REQUESTS] generated value for', innerPath, '=', generateValue(elemMod))
+                }
+                arrayValue.push(obj)
+              } else {
+                // 简单数组：直接生成值
+                const elemMod = elementMods['value']
+                if (elemMod) {
+                  arrayValue.push(generateValue(elemMod))
+                } else {
+                  arrayValue.push(generateValue(arrayMod))
+                }
+              }
+            }
+            console.log('[GENERATE_REQUESTS] arrayValue:', arrayValue)
+            setNestedValue(bodyObj, arrayPath, arrayValue)
+          }
+
           const bodyStr = JSON.stringify(bodyObj)
+          console.log('[GENERATE_REQUESTS] final body:', bodyStr)
+
           let curlCmd = `curl -X ${parsed.method} "${parsed.url}"`
 
           // 添加 headers
@@ -260,41 +389,48 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     }
 
     case 'SEND_REQUEST': {
-      try {
-        const parsed = parseCurlCommand(request.curlCmd)
+      (async () => {
+        try {
+          console.log('[SEND_REQUEST] received curlCmd:', request.curlCmd)
+          const parsed = parseCurlCommand(request.curlCmd)
+          console.log('[SEND_REQUEST] parsed result:', parsed)
 
-        const fetchOptions: RequestInit = {
-          method: parsed.method,
-          headers: parsed.headers,
-        }
+          if (!parsed.url) {
+            throw new Error('URL 为空，请检查 curl 命令格式')
+          }
 
-        if (parsed.body) {
-          fetchOptions.body = parsed.body
-        }
+          if (!parsed.url.startsWith('http://') && !parsed.url.startsWith('https://')) {
+            throw new Error('无效的 URL 协议：' + parsed.url)
+          }
 
-        fetch(parsed.url, fetchOptions)
-          .then((res) => res.text())
-          .then((text) => {
-            sendResponse({
-              success: true,
-              stdout: text,
-            })
+          const fetchOptions: RequestInit = {
+            method: parsed.method,
+            headers: parsed.headers,
+          }
+
+          if (parsed.body) {
+            fetchOptions.body = parsed.body
+          }
+
+          console.log('[SEND_REQUEST] fetching URL:', parsed.url)
+          console.log('[SEND_REQUEST] fetchOptions:', fetchOptions)
+
+          const response = await fetch(parsed.url, fetchOptions)
+          console.log('[SEND_REQUEST] response status:', response.status)
+          const text = await response.text()
+          sendResponse({
+            success: true,
+            stdout: text,
           })
-          .catch((err) => {
-            sendResponse({
-              success: false,
-              error: String(err),
-            })
+        } catch (err) {
+          console.error('[SEND_REQUEST] error:', err)
+          sendResponse({
+            success: false,
+            error: String(err),
           })
-
-        return true // 保持通道开放以进行异步响应
-      } catch (e) {
-        sendResponse({
-          success: false,
-          error: String(e),
-        })
-        return true
-      }
+        }
+      })()
+      return true
     }
   }
 })

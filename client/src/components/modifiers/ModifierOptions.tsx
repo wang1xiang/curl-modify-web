@@ -4,9 +4,10 @@ interface ModifierOptionsProps {
   path: string
   modifier: Modifier
   onChange: (modifier: Modifier) => void
+  isArray?: boolean
 }
 
-export function ModifierOptions({ modifier, onChange }: ModifierOptionsProps) {
+export function ModifierOptions({ modifier, onChange, isArray = false }: ModifierOptionsProps) {
   const handleFixedChange = (value: string) => {
     let parsedValue: string | number | boolean | null = value
     if (/^-?\d+$/.test(value)) parsedValue = parseInt(value, 10)
@@ -31,7 +32,7 @@ export function ModifierOptions({ modifier, onChange }: ModifierOptionsProps) {
         <input
           type="text"
           className="mod-spec w-full p-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-          placeholder="输入固定值..."
+          placeholder={isArray ? "输入数组元素的固定值..." : "输入固定值..."}
           value={modifier.spec}
           onChange={(e) => handleFixedChange(e.target.value)}
         />

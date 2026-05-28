@@ -4,6 +4,7 @@ import { generateRequests, sendRequest } from '@/services/api'
 
 export function RequestSender() {
   const parsed = useAppStore((state) => state.parsed)
+  const bodyJson = useAppStore((state) => state.bodyJson)
   const modifiers = useAppStore((state) => state.modifiers)
   const headerMods = useAppStore((state) => state.headerMods)
   const sendCount = useAppStore((state) => state.sendCount)
@@ -17,12 +18,16 @@ export function RequestSender() {
   const handleGenerateAndSend = async (previewOnly: boolean) => {
     if (!parsed) return
 
+    // 使用 bodyJson 而不是 parsed.body，以支持在预览中直接编辑
+    const bodyToUse = bodyJson ? JSON.stringify(bodyJson) : parsed.body
+
     clearResults()
     setIsSending(true)
     setProgress(0, sendCount)
 
     try {
-      const genData = await generateRequests(parsed, modifiers, headerMods, sendCount)
+      // 传入 bodyToUse 给生成逻辑
+      const genData = await generateRequests({ ...parsed, body: bodyToUse }, modifiers, headerMods, sendCount)
       if (!genData.success || !genData.requests) {
         throw new Error(genData.error || '生成请求失败')
       }
