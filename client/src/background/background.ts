@@ -36,26 +36,19 @@ function parseCurlCommand(curlCmd: string): { method: string; url: string; heade
   // 处理格式：curl 'URL' -X POST ...  或  curl -X POST 'URL' ...
   let urlValue = ''
 
-  // 方法 1: 先尝试匹配 curl 后紧跟的 URL（排除 -X 等选项）
-  // 匹配 curl 后面第一个以 http 开头的引号内容
-  const urlMatch1 = curlCmd.match(/curl\s+['"]?(https?:\/\/[^'"\s]+)['"]?/)
-  if (urlMatch1) {
-    urlValue = urlMatch1[1]
-  }
-
-  // 方法 2: 尝试匹配 -X METHOD 之后的 URL
+  // 方法 1: 直接找引号内的第一个 http URL（最可靠）
   if (!urlValue) {
-    const urlMatch2 = curlCmd.match(/-X\s+\w+\s+['"]?(https?:\/\/[^'"\s]+)['"]?/)
-    if (urlMatch2) {
-      urlValue = urlMatch2[1]
+    const urlMatch1 = curlCmd.match(/['"](https?:\/\/[^'"]+)['"]/i)
+    if (urlMatch1) {
+      urlValue = urlMatch1[1]
     }
   }
 
-  // 方法 3: 尝试匹配第一个出现的 http URL（任何位置）
+  // 方法 2: 无引号的 URL 匹配（处理转义符）
   if (!urlValue) {
-    const urlMatch3 = curlCmd.match(/['"]?(https?:\/\/[^'"\s]+)['"]?/)
-    if (urlMatch3) {
-      urlValue = urlMatch3[1]
+    const urlMatch2 = curlCmd.match(/(https?:\/\/\S+)/i)
+    if (urlMatch2) {
+      urlValue = urlMatch2[1].replace(/\\$/, '')
     }
   }
 
@@ -68,10 +61,15 @@ function parseCurlCommand(curlCmd: string): { method: string; url: string; heade
   }
 
   // 提取 body（支持 -d, --data, --data-raw, --data-binary 等多种形式）
-  const bodyMatch = curlCmd.match(/-d\s+['"](.+)['"]/)
-    || curlCmd.match(/--data\s+['"](.+)['"]/)
-    || curlCmd.match(/--data-raw\s+['"](.+)['"]/)
-    || curlCmd.match(/--data-binary\s+['"](.+)['"]/)
+  // 使用 [\s\S]+? 匹配跨行内容，懒匹配找到最近的结束引号
+  const bodyMatch = curlCmd.match(/-d\s+'([\s\S]*?)'\s*/m)
+    || curlCmd.match(/-d\s+"([\s\S]*?)"\s*/m)
+    || curlCmd.match(/--data\s+'([\s\S]*?)'\s*/m)
+    || curlCmd.match(/--data\s+"([\s\S]*?)"\s*/m)
+    || curlCmd.match(/--data-raw\s+'([\s\S]*?)'\s*/m)
+    || curlCmd.match(/--data-raw\s+"([\s\S]*?)"\s*/m)
+    || curlCmd.match(/--data-binary\s+'([\s\S]*?)'\s*/m)
+    || curlCmd.match(/--data-binary\s+"([\s\S]*?)"\s*/m)
   if (bodyMatch) {
     result.body = bodyMatch[1]
     // 如果有 body 但没有显式指定 method，默认为 POST
