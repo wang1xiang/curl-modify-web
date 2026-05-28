@@ -19,15 +19,20 @@ chrome.action.onClicked.addListener(async (tab) => {
 })
 
 // 简单的 curl 命令解析器
-function parseCurlCommand(curlCmd: string): { method: string; url: string; headers: Record<string, string>; body?: string } {
+function parseCurlCommand(curlCmd: string): {
+  method: string
+  url: string
+  headers: Record<string, string>
+  body?: string
+} {
   const result: { method: string; url: string; headers: Record<string, string>; body?: string } = {
     method: 'GET',
     url: '',
     headers: {},
   }
 
-  // 提取 method
-  const methodMatch = curlCmd.match(/-X\s+(\w+)/)
+  // 提取 method（支持 -X POST 和 -X 'POST' 两种形式）
+  const methodMatch = curlCmd.match(/-X\s+['"]?(\w+)['"]?/)
   if (methodMatch) {
     result.method = methodMatch[1]
   }
@@ -61,18 +66,24 @@ function parseCurlCommand(curlCmd: string): { method: string; url: string; heade
   }
 
   // 提取 body（支持 -d, --data, --data-raw, --data-binary 等多种形式）
-  // 使用 [\s\S]+? 匹配跨行内容，懒匹配找到最近的结束引号
-  const bodyMatch = curlCmd.match(/-d\s+'([\s\S]*?)'\s*/m)
-    || curlCmd.match(/-d\s+"([\s\S]*?)"\s*/m)
-    || curlCmd.match(/--data\s+'([\s\S]*?)'\s*/m)
-    || curlCmd.match(/--data\s+"([\s\S]*?)"\s*/m)
-    || curlCmd.match(/--data-raw\s+'([\s\S]*?)'\s*/m)
-    || curlCmd.match(/--data-raw\s+"([\s\S]*?)"\s*/m)
-    || curlCmd.match(/--data-binary\s+'([\s\S]*?)'\s*/m)
-    || curlCmd.match(/--data-binary\s+"([\s\S]*?)"\s*/m)
-  if (bodyMatch) {
-    result.body = bodyMatch[1]
-    // 如果有 body 但没有显式指定 method，默认为 POST
+  // 使用 matchAll 收集所有 --data 项，然后用 & 拼接（curl 默认行为）
+  const dataParts: string[] = []
+
+  // 匹配所有单引号包裹的值
+  for (const m of curlCmd.matchAll(/(?:-d|--data(?:-raw|-binary)?)\s+'([\s\S]*?)'\s*/g)) {
+    dataParts.push(m[1])
+  }
+  // 匹配所有双引号包裹的值
+  for (const m of curlCmd.matchAll(/(?:-d|--data(?:-raw|-binary)?)\s+"([\s\S]*?)"\s*/g)) {
+    dataParts.push(m[1])
+  }
+  // 匹配所有无引号的值
+  for (const m of curlCmd.matchAll(/(?:-d|--data(?:-raw|-binary)?)\s+([^\s\\'"]+)/g)) {
+    dataParts.push(m[1])
+  }
+
+  if (dataParts.length > 0) {
+    result.body = dataParts.join('&')
     if (!methodMatch) {
       result.method = 'POST'
     }
@@ -194,10 +205,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // 复制链接为 Curl 的函数（在页面上下文中执行）
 function copyLinkAsCurl(url: string) {
   const curlCmd = `curl -X GET "${url}" -H "Accept: application/json"`
-  navigator.clipboard.writeText(curlCmd).then(() => {
-  }).catch((err) => {
-    console.error('Failed to copy:', err)
-  })
+  navigator.clipboard
+    .writeText(curlCmd)
+    .then(() => {})
+    .catch((err) => {
+      console.error('Failed to copy:', err)
+    })
 }
 
 // 监听来自 content script 和 popup 的消息
@@ -211,7 +224,11 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     case 'SAVE_CURL':
       chrome.storage.local.get({ savedEndpoints: [] }, (result) => {
-        const endpoints = result.savedEndpoints as Array<{ id: number; name: string; curlCmd: string }>
+        const endpoints = result.savedEndpoints as Array<{
+          id: number
+          name: string
+          curlCmd: string
+        }>
         endpoints.push({
           id: Date.now(),
           name: request.name,
@@ -241,29 +258,33 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       try {
         const parsed = parseCurlCommand(request.curlCmd)
         let bodyJson: Record<string, unknown> | null = null
+        let bodyFormat: 'json' | 'form-urlencoded' = 'json'
+
         if (parsed.body) {
           try {
             bodyJson = JSON.parse(parsed.body)
+            bodyFormat = 'json'
           } catch {
             // 尝试作为 URLSearchParams 解析
             const params = new URLSearchParams(parsed.body)
             const obj: Record<string, unknown> = {}
             for (const [key, value] of params.entries()) {
-              obj[key] = value
+              try {
+                obj[key] = JSON.parse(value)
+              } catch {
+                obj[key] = value
+              }
             }
             if (Object.keys(obj).length > 0) {
               bodyJson = obj
+              bodyFormat = 'form-urlencoded'
             } else {
-              // 依然失败，兜底
               bodyJson = { value: parsed.body }
             }
           }
         }
-        sendResponse({
-          success: true,
-          parsed,
-          bodyJson,
-        })
+
+        sendResponse({ success: true, parsed, bodyJson, bodyFormat })
       } catch (e) {
         sendResponse({
           success: false,
@@ -279,11 +300,18 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         const requests = []
 
         // 分离数组修改器和普通修改器
-        const arrayModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
-        const normalModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
-        const arrayElementModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
+        const arrayModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> =
+          {}
+        const normalModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> =
+          {}
+        const arrayElementModifiers: Record<
+          string,
+          { type: string; spec: string; arrayCount?: number }
+        > = {}
 
-        for (const [path, mod] of Object.entries(modifiers as Record<string, { type: string; spec: string; arrayCount?: number }>)) {
+        for (const [path, mod] of Object.entries(
+          modifiers as Record<string, { type: string; spec: string; arrayCount?: number }>
+        )) {
           if (path.includes('[')) {
             // 数组元素修改器，如 order[0].column
             arrayElementModifiers[path] = mod
@@ -352,12 +380,30 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
             setNestedValue(bodyObj, arrayPath, arrayValue)
           }
 
-          const bodyStr = JSON.stringify(bodyObj)
+          // 根据原始 body 格式选择序列化方式
+          const bodyFormat = parsed.bodyFormat || 'json'
+          let bodyStr: string
+          if (bodyFormat === 'form-urlencoded') {
+            const params = new URLSearchParams()
+            for (const [key, value] of Object.entries(bodyObj)) {
+              params.append(key, typeof value === 'string' ? value : JSON.stringify(value))
+            }
+            bodyStr = params.toString()
+          } else {
+            bodyStr = JSON.stringify(bodyObj)
+          }
 
           let curlCmd = `curl -X ${parsed.method} "${parsed.url}"`
 
-          // 添加 headers
+          // 添加 headers，并根据 body 格式更新 content-type
           const headers = { ...parsed.headers, ...headerMods }
+          if (bodyStr && bodyStr !== '{}') {
+            if (bodyFormat === 'form-urlencoded') {
+              headers['Content-Type'] = 'application/x-www-form-urlencoded'
+            } else {
+              headers['Content-Type'] = 'application/json'
+            }
+          }
           for (const [key, value] of Object.entries(headers)) {
             curlCmd += ` -H "${key}: ${value}"`
           }
@@ -385,7 +431,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     }
 
     case 'SEND_REQUEST': {
-      (async () => {
+      ;(async () => {
         try {
           const parsed = parseCurlCommand(request.curlCmd)
 

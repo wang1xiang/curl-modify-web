@@ -23,8 +23,17 @@ export const useAppStore = create<AppState>((set) => ({
   // Actions
   setCurlInput: (input: string) => set({ curlInput: input }),
 
-  setParsed: (parsed: ParsedCurl | null, bodyJson: Record<string, unknown> | null) =>
-    set({ parsed, bodyJson, modifiers: {}, headerMods: parsed?.headers || {} }),
+  setParsed: (
+    parsed: ParsedCurl | null,
+    bodyJson: Record<string, unknown> | null,
+    bodyFormat: 'json' | 'form-urlencoded'
+  ) =>
+    set({
+      parsed: parsed ? { ...parsed, bodyFormat } : null,
+      bodyJson,
+      modifiers: {},
+      headerMods: parsed?.headers || {},
+    }),
 
   setModifier: (path: string, modifier: Modifier) =>
     set((state) => ({

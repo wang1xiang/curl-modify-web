@@ -13,7 +13,7 @@ export function SavedEndpoints() {
     try {
       const data = await parseCurl(curlCmd)
       if (data.success && data.parsed) {
-        setParsed(data.parsed, data.bodyJson || null)
+        setParsed(data.parsed, data.bodyJson || null, data.bodyFormat || 'json')
       }
     } catch (e) {
       console.error('Failed to parse curl:', e)
@@ -24,7 +24,9 @@ export function SavedEndpoints() {
     <div className="space-y-3">
       {endpoints.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 px-4 glass-card border-dashed">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Archive Empty</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            Archive Empty
+          </p>
         </div>
       ) : (
         <div className="space-y-2 max-h-48 overflow-auto custom-scrollbar pr-1">

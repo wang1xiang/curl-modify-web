@@ -14,7 +14,7 @@ export function CurlInput() {
     try {
       const data = await parseCurl(curlInput)
       if (data.success && data.parsed) {
-        setParsed(data.parsed, data.bodyJson || null)
+        setParsed(data.parsed, data.bodyJson || null, data.bodyFormat || 'json')
       }
     } catch (e) {
       console.error('解析失败:', e)

@@ -29,7 +29,7 @@ export function FieldModifier() {
   const [expandedArrays, setExpandedArrays] = useState<Set<string>>(new Set())
 
   const toggleArrayExpand = (path: string) => {
-    setExpandedArrays(prev => {
+    setExpandedArrays((prev) => {
       const next = new Set(prev)
       if (next.has(path)) {
         next.delete(path)
@@ -69,9 +69,9 @@ export function FieldModifier() {
   const fields = flattenObject(jsonObj)
 
   // 分离数组字段、数组元素字段（如 column[0]、order[0].column）和普通字段
-  const arrayFields = fields.filter(f => f.isArray)
-  const arrayElementFields = fields.filter(f => !f.isArray && f.path.includes('[')) // 如 column[0], order[0].column
-  const nonArrayFields = fields.filter(f => !f.isArray && !f.path.includes('['))
+  const arrayFields = fields.filter((f) => f.isArray)
+  const arrayElementFields = fields.filter((f) => !f.isArray && f.path.includes('[')) // 如 column[0], order[0].column
+  const nonArrayFields = fields.filter((f) => !f.isArray && !f.path.includes('['))
 
   const handleArrayTypeChange = (path: string, type: 'none' | 'array') => {
     if (type === 'none') {
@@ -82,7 +82,7 @@ export function FieldModifier() {
       setModifier(path, {
         type: 'list',
         spec: 'array',
-        arrayCount: existingMod?.arrayCount || 3
+        arrayCount: existingMod?.arrayCount || 3,
       })
     }
   }
@@ -106,32 +106,31 @@ export function FieldModifier() {
   const arrayElementsMap = new Map<string, typeof fields>()
 
   // 添加对象数组元素（如 order[0].column）
-  arrayElementFields.forEach(field => {
+  arrayElementFields.forEach((field) => {
     const parentPath = field.path.match(/^([^\[]+)/)?.[1] || ''
     if (parentPath) {
       if (!arrayElementsMap.has(parentPath)) {
         arrayElementsMap.set(parentPath, [])
       }
-      if (!arrayElementsMap.get(parentPath)!.find(f => f.path === field.path)) {
+      if (!arrayElementsMap.get(parentPath)!.find((f) => f.path === field.path)) {
         arrayElementsMap.get(parentPath)!.push(field)
       }
     }
   })
 
   // 添加对象数组的嵌套元素（如 order[0].column -> order）
-  arrayFields.forEach(field => {
+  // 同时确保空数组也能进入渲染列表
+  arrayFields.forEach((field) => {
     const parentPath = field.path
-    const elements = arrayElementFields.filter(f => f.path.startsWith(parentPath + '['))
-    if (elements.length > 0) {
-      if (!arrayElementsMap.has(parentPath)) {
-        arrayElementsMap.set(parentPath, [])
-      }
-      elements.forEach(elem => {
-        if (!arrayElementsMap.get(parentPath)!.find(f => f.path === elem.path)) {
-          arrayElementsMap.get(parentPath)!.push(elem)
-        }
-      })
+    if (!arrayElementsMap.has(parentPath)) {
+      arrayElementsMap.set(parentPath, [])
     }
+    const elements = arrayElementFields.filter((f) => f.path.startsWith(parentPath + '['))
+    elements.forEach((elem) => {
+      if (!arrayElementsMap.get(parentPath)!.find((f) => f.path === elem.path)) {
+        arrayElementsMap.get(parentPath)!.push(elem)
+      }
+    })
   })
 
   return (
@@ -140,17 +139,12 @@ export function FieldModifier() {
       {nonArrayFields.map((field) => {
         const modifier = modifiers[field.path]
         return (
-          <div
-            key={field.path}
-            className="glass-card p-4 space-y-3 relative group"
-          >
+          <div key={field.path} className="glass-card p-4 space-y-3 relative group">
             {modifier && modifier.type !== 'none' && (
               <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
             )}
             <div className="flex items-center justify-between">
-              <code className="text-sm text-slate-300 font-mono tracking-tight">
-                {field.path}
-              </code>
+              <code className="text-sm text-slate-300 font-mono tracking-tight">{field.path}</code>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-bold uppercase tracking-wider">
                 {field.type}
               </span>
@@ -162,7 +156,7 @@ export function FieldModifier() {
                 onChange={(val) => handleTypeChange(field.path, val as Modifier['type'])}
               />
               {modifier && modifier.type !== 'none' && (
-                <button 
+                <button
                   onClick={() => removeModifier(field.path)}
                   className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all duration-200"
                   title="移除修改器"
@@ -187,10 +181,7 @@ export function FieldModifier() {
         const elements = arrayElementsMap.get(parentPath)!
         const modifier = modifiers[parentPath]
         return (
-          <div
-            key={parentPath}
-            className="glass-card p-4 space-y-3 relative group"
-          >
+          <div key={parentPath} className="glass-card p-4 space-y-3 relative group">
             {modifier && modifier.type !== 'none' && (
               <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
             )}
@@ -211,13 +202,15 @@ export function FieldModifier() {
               <select
                 className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
                 value={modifier ? 'array' : 'none'}
-                onChange={(e) => handleArrayTypeChange(parentPath, e.target.value as 'none' | 'array')}
+                onChange={(e) =>
+                  handleArrayTypeChange(parentPath, e.target.value as 'none' | 'array')
+                }
               >
                 <option value="none">不修改</option>
                 <option value="array">动态数组生成</option>
               </select>
               {modifier && (
-                 <button 
+                <button
                   onClick={() => removeModifier(parentPath)}
                   className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all duration-200"
                   title="移除修改器"
@@ -230,13 +223,17 @@ export function FieldModifier() {
             {/* 动态生成数组个数 */}
             {modifier && (
               <div className="flex items-center gap-3 p-3 glass-card">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">生成数量:</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  生成数量:
+                </label>
                 <input
                   type="number"
                   min="1"
                   max="50"
                   value={modifier.arrayCount || 3}
-                  onChange={(e) => handleArrayCountChange(parentPath, parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleArrayCountChange(parentPath, parseInt(e.target.value) || 1)
+                  }
                   className="input-gemini w-20 !py-2 !px-3 !text-xs"
                 />
                 <span className="text-xs text-slate-500">个</span>
@@ -261,10 +258,7 @@ export function FieldModifier() {
                   {elements.map((elem) => {
                     const elemModifier = modifiers[elem.path]
                     return (
-                      <div
-                        key={elem.path}
-                        className="glass-card p-3 pl-5 space-y-3 relative group"
-                      >
+                      <div key={elem.path} className="glass-card p-3 pl-5 space-y-3 relative group">
                         {elemModifier && elemModifier.type !== 'none' && (
                           <div className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
                         )}
@@ -280,7 +274,9 @@ export function FieldModifier() {
                           <select
                             className="input-gemini flex-1 !py-2.5 !px-4 !text-xs"
                             value={elemModifier?.type || 'none'}
-                            onChange={(e) => handleTypeChange(elem.path, e.target.value as Modifier['type'])}
+                            onChange={(e) =>
+                              handleTypeChange(elem.path, e.target.value as Modifier['type'])
+                            }
                           >
                             <option value="none">不修改</option>
                             <option value="fixed">固定值</option>
@@ -292,15 +288,15 @@ export function FieldModifier() {
                             <option value="url">随机网址</option>
                             <option value="list">列表选择</option>
                           </select>
-                           {elemModifier && elemModifier.type !== 'none' && (
-                            <button 
+                          {elemModifier && elemModifier.type !== 'none' && (
+                            <button
                               onClick={() => removeModifier(elem.path)}
                               className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 transition-all duration-200"
                               title="移除修改器"
                             >
                               <MinusCircle className="w-4 h-4" />
                             </button>
-                           )}
+                          )}
                         </div>
                         {elemModifier && elemModifier.type !== 'none' && (
                           <div className="mt-2">

@@ -1,9 +1,17 @@
-export function flattenObject(obj: Record<string, unknown>, prefix = ''): Array<{ path: string; value: unknown; type: string; isArray?: boolean }> {
+export function flattenObject(
+  obj: Record<string, unknown>,
+  prefix = ''
+): Array<{ path: string; value: unknown; type: string; isArray?: boolean }> {
   const result: Array<{ path: string; value: unknown; type: string; isArray?: boolean }> = []
   for (const [key, value] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${key}` : key
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      result.push(...flattenObject(value as Record<string, unknown>, path))
+      // 空对象保留为 object 类型字段
+      if (Object.keys(value as Record<string, unknown>).length === 0) {
+        result.push({ path, value, type: 'object' })
+      } else {
+        result.push(...flattenObject(value as Record<string, unknown>, path))
+      }
     } else if (Array.isArray(value)) {
       // 数组类型，提取数组元素类型
       const arrayType = value.length > 0 ? typeof value[0] : 'unknown'

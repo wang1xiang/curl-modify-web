@@ -4,6 +4,7 @@ export interface ParseResponse {
   success: boolean
   parsed?: ParsedCurl
   bodyJson?: Record<string, unknown>
+  bodyFormat?: 'json' | 'form-urlencoded'
   error?: string
 }
 
@@ -25,16 +26,13 @@ export async function parseCurl(curlCmd: string): Promise<ParseResponse> {
   // 检查是否在扩展环境中
   if (typeof chrome !== 'undefined' && chrome.runtime) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { type: 'PARSE_CURL', curlCmd },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            resolve({ success: false, error: chrome.runtime.lastError.message })
-          } else {
-            resolve(response)
-          }
+      chrome.runtime.sendMessage({ type: 'PARSE_CURL', curlCmd }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve({ success: false, error: chrome.runtime.lastError.message })
+        } else {
+          resolve(response)
         }
-      )
+      })
     })
   }
 
@@ -81,16 +79,13 @@ export async function generateRequests(
 export async function sendRequest(curlCmd: string): Promise<SendResponse> {
   if (typeof chrome !== 'undefined' && chrome.runtime) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { type: 'SEND_REQUEST', curlCmd },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            resolve({ success: false, error: chrome.runtime.lastError.message })
-          } else {
-            resolve(response)
-          }
+      chrome.runtime.sendMessage({ type: 'SEND_REQUEST', curlCmd }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve({ success: false, error: chrome.runtime.lastError.message })
+        } else {
+          resolve(response)
         }
-      )
+      })
     })
   }
 

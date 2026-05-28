@@ -27,7 +27,12 @@ export function RequestSender() {
 
     try {
       // 传入 bodyToUse 给生成逻辑
-      const genData = await generateRequests({ ...parsed, body: bodyToUse }, modifiers, headerMods, sendCount)
+      const genData = await generateRequests(
+        { ...parsed, body: bodyToUse },
+        modifiers,
+        headerMods,
+        sendCount
+      )
       if (!genData.success || !genData.requests) {
         throw new Error(genData.error || '生成请求失败')
       }

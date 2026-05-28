@@ -17,8 +17,8 @@ export function JsonPreview() {
       const preview = JSON.parse(JSON.stringify(bodyJson))
 
       // 分离数组修改器和元素修改器
-      const arrayMods: Record<string, typeof modifiers[0]> = {}
-      const elementMods: Record<string, typeof modifiers[0]> = {}
+      const arrayMods: Record<string, (typeof modifiers)[0]> = {}
+      const elementMods: Record<string, (typeof modifiers)[0]> = {}
 
       for (const [path, mod] of Object.entries(modifiers)) {
         if (path.includes('[')) {
@@ -67,7 +67,7 @@ export function JsonPreview() {
         const arrayCount = arrayMod.arrayCount || 3
 
         // 收集该数组的元素修改器，并区分是对象数组还是简单数组
-        const elemModsForThisArray: Record<string, typeof modifiers[0]> = {}
+        const elemModsForThisArray: Record<string, (typeof modifiers)[0]> = {}
         let hasNestedFields = false
 
         for (const [elemPath, elemMod] of Object.entries(elementMods)) {
@@ -167,7 +167,7 @@ export function JsonPreview() {
       setJsonError('')
       // 更新 bodyJson
       if (parsed) {
-        useAppStore.getState().setParsed(parsed, JSON.parse(newValue))
+        useAppStore.getState().setParsed(parsed, JSON.parse(newValue), parsed.bodyFormat || 'json')
       }
     } catch (err) {
       setJsonError((err as Error).message)

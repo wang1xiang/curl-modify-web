@@ -3,12 +3,13 @@ export interface ParsedCurl {
   url: string
   headers: Record<string, string>
   body: string | null
+  bodyFormat?: 'json' | 'form-urlencoded'
 }
 
 export interface Modifier {
   type: 'none' | 'fixed' | 'int' | 'string' | 'date' | 'phone' | 'email' | 'url' | 'list'
   spec: string
-  arrayCount?: number  // 数组元素生成数量，仅当字段是数组时使用
+  arrayCount?: number // 数组元素生成数量，仅当字段是数组时使用
 }
 
 export interface SavedEndpoint {
@@ -51,7 +52,11 @@ export interface AppState {
 
   // Actions
   setCurlInput: (input: string) => void
-  setParsed: (parsed: ParsedCurl | null, bodyJson: Record<string, unknown> | null) => void
+  setParsed: (
+    parsed: ParsedCurl | null,
+    bodyJson: Record<string, unknown> | null,
+    bodyFormat: 'json' | 'form-urlencoded'
+  ) => void
   setModifier: (path: string, modifier: Modifier) => void
   removeModifier: (path: string) => void
   setHeaderMod: (key: string, value: string) => void
@@ -61,7 +66,11 @@ export interface AppState {
   setIsSending: (sending: boolean) => void
   setSendCount: (count: number) => void
   setProgress: (current: number, total: number) => void
-  addResult: (result: { request: GeneratedRequest; result?: RequestResult; isPreview: boolean }) => void
+  addResult: (result: {
+    request: GeneratedRequest
+    result?: RequestResult
+    isPreview: boolean
+  }) => void
   clearResults: () => void
   reset: () => void
 }
