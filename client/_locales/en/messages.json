@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "Curl Modify Tool",
+    "description": "Browser extension name"
+  },
+  "extensionDescription": {
+    "message": "Powerful Curl request modification and testing tool - supports dynamic field modification, batch sending, and more",
+    "description": "Browser extension description"
+  }
+}
