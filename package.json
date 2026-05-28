@@ -1,17 +1,28 @@
 {
   "name": "curl-modify-web",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "dev": "pnpm -F client dev",
+    "build": "pnpm -F client build",
+    "preview": "pnpm -F client preview",
+    "server": "node server/server.js",
+    "lint": "pnpm -F client lint",
+    "lint:fix": "pnpm -F client lint:fix",
+    "format": "pnpm -F client format",
+    "prepare": "husky install"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1"
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   }
 }

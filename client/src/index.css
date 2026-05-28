@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border-light dark:border-border-dark;
+  }
+  body {
+    @apply bg-surface-light dark:bg-surface-dark text-text-light dark:text-text-dark font-sans;
+  }
+}
+
+@layer utilities {
+  .transition-glow {
+    @apply transition-all duration-300 ease-out;
+  }
+  .hover-glow-blue:hover {
+    @apply shadow-glow-blue;
+  }
+  .hover-glow-orange:hover {
+    @apply shadow-glow-orange;
+  }
+  .text-glow {
+    text-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+  }
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-surface-dark;
+  }
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-4 rounded-lg transition-glow hover-glow-blue focus-ring;
+  }
+  .btn-cta {
+    @apply bg-cta-600 hover:bg-cta-700 text-white font-medium py-2.5 px-4 rounded-lg transition-glow hover-glow-orange focus-ring;
+  }
+  .btn-secondary {
+    @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium py-2.5 px-4 rounded-lg transition-glow focus-ring;
+  }
+  .card {
+    @apply bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+  .input-field {
+    @apply w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus-ring transition-all duration-200;
+  }
+  .panel-header {
+    @apply px-5 py-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm;
+  }
+}
+
+/* JSON syntax highlighting */
+.json-key { color: #60A5FA; }
+.json-string { color: #34D399; }
+.json-number { color: #FBBF24; }
+.json-boolean { color: #F87171; }
+.json-null { color: #9CA3AF; }
+
+.dark .json-key { color: #60A5FA; }
+.dark .json-string { color: #34D399; }
+.dark .json-number { color: #FBBF24; }
+.dark .json-boolean { color: #F87171; }
+.dark .json-null { color: #9CA3AF; }
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
