@@ -22,6 +22,10 @@ export default defineConfig({
 
         // 复制图标
         await cp('icons', 'dist/icons', { recursive: true })
+
+        // 复制 content.css 到根目录
+        const contentCss = path.resolve(__dirname, 'dist/assets/content-hXzoWJHr.css')
+        await copyFile(contentCss, 'dist/content.css')
       },
     },
   ],
@@ -51,7 +55,13 @@ export default defineConfig({
           return 'assets/[name]-[hash].js'
         },
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
+        assetFileNames: (assetInfo) => {
+          // CSS 文件放到根目录
+          if (assetInfo.name === 'content' && assetInfo.type === 'asset') {
+            return '[name].[ext]'
+          }
+          return 'assets/[name]-[hash].[ext]'
+        },
       },
     },
   },
