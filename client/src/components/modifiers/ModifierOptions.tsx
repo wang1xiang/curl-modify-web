@@ -1,4 +1,5 @@
 import type { Modifier } from '@/types'
+import { GeminiSelect } from '@/components/ui/GeminiSelect'
 
 interface ModifierOptionsProps {
   path: string
@@ -26,6 +27,13 @@ export function ModifierOptions({ modifier, onChange, isArray = false }: Modifie
     onChange({ ...modifier, spec: `${len}:${lang}` })
   }
 
+  const langOptions = [
+    { value: 'mix', label: '中英数混合' },
+    { value: 'zh', label: '中文' },
+    { value: 'en', label: '英文' },
+    { value: 'num', label: '数字' },
+  ]
+
   return (
     <div className="pt-3 mt-3 border-t border-white/5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="flex items-center gap-2 px-1">
@@ -40,7 +48,7 @@ export function ModifierOptions({ modifier, onChange, isArray = false }: Modifie
               return (
                 <input
                   type="text"
-                  className="input-gemini !py-2 !text-[11px] !px-3"
+                  className="input-gemini !py-2.5 !text-xs !px-4"
                   placeholder={isArray ? "数组元素的固定值..." : "固定值..."}
                   value={modifier.spec}
                   onChange={(e) => handleFixedChange(e.target.value)}
@@ -50,17 +58,17 @@ export function ModifierOptions({ modifier, onChange, isArray = false }: Modifie
             case 'int': {
               const [min, max] = (modifier.spec || '1-100').split('-')
               return (
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <input
                     type="number"
-                    className="input-gemini flex-1 !py-2 !text-[11px] !px-3"
+                    className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
                     placeholder="最小值"
                     value={min || '1'}
                     onChange={(e) => handleIntChange(e.target.value, max || '100')}
                   />
                   <input
                     type="number"
-                    className="input-gemini flex-1 !py-2 !text-[11px] !px-3"
+                    className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
                     placeholder="最大值"
                     value={max || '100'}
                     onChange={(e) => handleIntChange(min || '1', e.target.value)}
@@ -74,24 +82,21 @@ export function ModifierOptions({ modifier, onChange, isArray = false }: Modifie
               const len = parts[0] || '8'
               const lang = parts[1] || 'mix'
               return (
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <input
                     type="number"
-                    className="input-gemini flex-1 !py-2 !text-[11px] !px-3"
+                    className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
                     placeholder="长度"
                     value={len}
                     onChange={(e) => handleStringChange(e.target.value, lang)}
                   />
-                  <select
-                    className="input-gemini flex-1 !py-2 !text-[11px] !px-3"
-                    value={lang}
-                    onChange={(e) => handleStringChange(len, e.target.value)}
-                  >
-                    <option value="mix">中英数混合</option>
-                    <option value="zh">中文</option>
-                    <option value="en">英文</option>
-                    <option value="num">数字</option>
-                  </select>
+                  <div className="flex-[2]">
+                    <GeminiSelect
+                        options={langOptions}
+                        value={lang}
+                        onChange={(val) => handleStringChange(len, val)}
+                    />
+                  </div>
                 </div>
               )
             }
@@ -100,7 +105,7 @@ export function ModifierOptions({ modifier, onChange, isArray = false }: Modifie
               return (
                 <input
                   type="text"
-                  className="input-gemini !py-2 !text-[11px] !px-3"
+                  className="input-gemini !py-2.5 !text-xs !px-4"
                   placeholder="日期格式 (YYYY-MM-DD HH:mm:ss)"
                   value={modifier.spec || 'YYYY-MM-DD HH:mm:ss'}
                   onChange={(e) => onChange({ ...modifier, spec: e.target.value })}
@@ -111,7 +116,7 @@ export function ModifierOptions({ modifier, onChange, isArray = false }: Modifie
               return (
                 <input
                   type="text"
-                  className="input-gemini !py-2 !text-[11px] !px-3"
+                  className="input-gemini !py-2.5 !text-xs !px-4"
                   placeholder="逗号分隔的值 (例如: A,B,C)"
                   value={modifier.spec}
                   onChange={(e) => onChange({ ...modifier, spec: e.target.value })}

@@ -245,8 +245,18 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           try {
             bodyJson = JSON.parse(parsed.body)
           } catch {
-            // 如果解析失败，尝试将字符串作为值
-            bodyJson = { value: parsed.body }
+            // 尝试作为 URLSearchParams 解析
+            const params = new URLSearchParams(parsed.body)
+            const obj: Record<string, unknown> = {}
+            for (const [key, value] of params.entries()) {
+              obj[key] = value
+            }
+            if (Object.keys(obj).length > 0) {
+              bodyJson = obj
+            } else {
+              // 依然失败，兜底
+              bodyJson = { value: parsed.body }
+            }
           }
         }
         sendResponse({

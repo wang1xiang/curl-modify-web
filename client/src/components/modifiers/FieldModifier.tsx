@@ -4,12 +4,26 @@ import { ModifierOptions } from './ModifierOptions'
 import type { Modifier } from '@/types'
 import { useState } from 'react'
 import { Grid, ChevronDown, MinusCircle } from 'lucide-react'
+import { GeminiSelect } from '@/components/ui/GeminiSelect'
 
 export function FieldModifier() {
   const bodyJson = useAppStore((state) => state.bodyJson)
   const modifiers = useAppStore((state) => state.modifiers)
   const setModifier = useAppStore((state) => state.setModifier)
   const removeModifier = useAppStore((state) => state.removeModifier)
+
+  const modifierOptions = [
+    { value: 'none', label: '不修改' },
+    { value: 'fixed', label: '固定值' },
+    { value: 'int', label: '随机整数' },
+    { value: 'string', label: '随机字符串' },
+    { value: 'date', label: '随机日期' },
+    { value: 'phone', label: '随机手机号' },
+    { value: 'email', label: '随机邮箱' },
+    { value: 'url', label: '随机网址' },
+    { value: 'list', label: '列表选择' },
+  ]
+  // ... 其他逻辑不变，只修改 return 中的 select 部分
 
   // 数组元素字段的展开状态
   const [expandedArrays, setExpandedArrays] = useState<Set<string>>(new Set())
@@ -142,21 +156,11 @@ export function FieldModifier() {
               </span>
             </div>
             <div className="flex gap-3">
-              <select
-                className="input-gemini flex-1 !py-2.5 !text-xs !px-4"
+              <GeminiSelect
+                options={modifierOptions}
                 value={modifier?.type || 'none'}
-                onChange={(e) => handleTypeChange(field.path, e.target.value as Modifier['type'])}
-              >
-                <option value="none">不修改</option>
-                <option value="fixed">固定值</option>
-                <option value="int">随机整数</option>
-                <option value="string">随机字符串</option>
-                <option value="date">随机日期</option>
-                <option value="phone">随机手机号</option>
-                <option value="email">随机邮箱</option>
-                <option value="url">随机网址</option>
-                <option value="list">列表选择</option>
-              </select>
+                onChange={(val) => handleTypeChange(field.path, val as Modifier['type'])}
+              />
               {modifier && modifier.type !== 'none' && (
                 <button 
                   onClick={() => removeModifier(field.path)}
