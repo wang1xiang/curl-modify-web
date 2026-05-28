@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { copyFile, mkdir } from 'fs/promises'
+import { copyFile, mkdir, cp } from 'fs/promises'
 
 export default defineConfig({
   plugins: [
@@ -19,6 +19,9 @@ export default defineConfig({
         await copyFile('manifest.json', 'dist/manifest.json')
         await copyFile('_locales/zh_CN/messages.json', 'dist/_locales/zh_CN/messages.json')
         await copyFile('_locales/en/messages.json', 'dist/_locales/en/messages.json')
+
+        // 复制图标
+        await cp('icons', 'dist/icons', { recursive: true })
       },
     },
   ],

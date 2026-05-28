@@ -1,10 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Curl 修改工具",
-  "name__MSG_@@ui_locale": true,
   "version": "1.0.0",
   "description": "强大的 Curl 请求修改和测试工具 - 支持字段动态修改、批量发送等功能",
-  "description__MSG_@@ui_locale": true,
   "default_locale": "zh_CN",
   "icons": {
     "16": "icons/icon-16.png",
@@ -14,12 +12,6 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    },
     "default_title": "Curl 修改工具"
   },
   "permissions": [
@@ -33,20 +25,20 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.ts",
+    "service_worker": "background.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.ts"],
+      "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["content.css", "icons/*"],
+      "resources": ["content.css", "icons/*", "assets/*"],
       "matches": ["<all_urls>"]
     }
   ]
