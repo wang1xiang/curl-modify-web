@@ -197,7 +197,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 function copyLinkAsCurl(url: string) {
   const curlCmd = `curl -X GET "${url}" -H "Accept: application/json"`
   navigator.clipboard.writeText(curlCmd).then(() => {
-    console.log('Curl command copied to clipboard')
   }).catch((err) => {
     console.error('Failed to copy:', err)
   })
@@ -271,8 +270,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         const { parsed, modifiers, headerMods, count } = request
         const requests = []
 
-        console.log('[GENERATE_REQUESTS] modifiers:', modifiers)
-
         // 分离数组修改器和普通修改器
         const arrayModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
         const normalModifiers: Record<string, { type: string; spec: string; arrayCount?: number }> = {}
@@ -282,15 +279,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           if (path.includes('[')) {
             // 数组元素修改器，如 order[0].column
             arrayElementModifiers[path] = mod
-            console.log('[GENERATE_REQUESTS] arrayElementModifiers:', path, mod)
           } else if (mod.spec === 'array' && mod.arrayCount && mod.arrayCount > 0) {
             // 数组修改器（spec 为 'array' 且有 arrayCount）
             arrayModifiers[path] = mod
-            console.log('[GENERATE_REQUESTS] arrayModifiers:', path, mod)
           } else {
             // 普通修改器
             normalModifiers[path] = mod
-            console.log('[GENERATE_REQUESTS] normalModifiers:', path, mod)
           }
         }
 
@@ -323,11 +317,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
                   hasNestedFields = true
                 }
                 elementMods[innerPath || 'value'] = elemMod
-                console.log('[GENERATE_REQUESTS] elementMods:', innerPath || 'value', elemMod, 'hasNestedFields:', hasNestedFields)
               }
             }
-
-            console.log('[GENERATE_REQUESTS] generating array:', arrayPath, 'count:', arrayCount, 'elementMods:', elementMods, 'hasNestedFields:', hasNestedFields)
 
             // 生成数组
             const arrayValue = []
@@ -338,7 +329,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
                 for (const [innerPath, elemMod] of Object.entries(elementMods)) {
                   if (innerPath === 'value') continue // 跳过简单数组的 value 键
                   obj[innerPath] = generateValue(elemMod)
-                  console.log('[GENERATE_REQUESTS] generated value for', innerPath, '=', generateValue(elemMod))
                 }
                 arrayValue.push(obj)
               } else {
@@ -351,12 +341,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
                 }
               }
             }
-            console.log('[GENERATE_REQUESTS] arrayValue:', arrayValue)
             setNestedValue(bodyObj, arrayPath, arrayValue)
           }
 
           const bodyStr = JSON.stringify(bodyObj)
-          console.log('[GENERATE_REQUESTS] final body:', bodyStr)
 
           let curlCmd = `curl -X ${parsed.method} "${parsed.url}"`
 
@@ -391,9 +379,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     case 'SEND_REQUEST': {
       (async () => {
         try {
-          console.log('[SEND_REQUEST] received curlCmd:', request.curlCmd)
           const parsed = parseCurlCommand(request.curlCmd)
-          console.log('[SEND_REQUEST] parsed result:', parsed)
 
           if (!parsed.url) {
             throw new Error('URL 为空，请检查 curl 命令格式')
@@ -412,18 +398,13 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
             fetchOptions.body = parsed.body
           }
 
-          console.log('[SEND_REQUEST] fetching URL:', parsed.url)
-          console.log('[SEND_REQUEST] fetchOptions:', fetchOptions)
-
           const response = await fetch(parsed.url, fetchOptions)
-          console.log('[SEND_REQUEST] response status:', response.status)
           const text = await response.text()
           sendResponse({
             success: true,
             stdout: text,
           })
         } catch (err) {
-          console.error('[SEND_REQUEST] error:', err)
           sendResponse({
             success: false,
             error: String(err),

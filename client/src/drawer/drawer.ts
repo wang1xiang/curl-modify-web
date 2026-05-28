@@ -108,6 +108,4 @@
     }
     return true
   })
-
-  console.log('[Curl Modify] Drawer injected successfully')
 })()

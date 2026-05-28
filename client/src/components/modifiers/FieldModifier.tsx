@@ -25,8 +25,6 @@ export function FieldModifier() {
     })
   }
 
-  console.log('FieldModifier bodyJson:', bodyJson, 'type:', typeof bodyJson)
-
   // 处理 bodyJson 可能是字符串的情况
   let jsonObj: Record<string, unknown> | null = null
   if (bodyJson) {
@@ -40,8 +38,6 @@ export function FieldModifier() {
       jsonObj = bodyJson as Record<string, unknown>
     }
   }
-
-  console.log('FieldModifier jsonObj:', jsonObj)
 
   if (!jsonObj) {
     return (

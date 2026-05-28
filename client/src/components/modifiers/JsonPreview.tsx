@@ -64,7 +64,6 @@ export function JsonPreview() {
       // 2. 处理数组修改器
       for (const [arrayPath, arrayMod] of Object.entries(arrayMods)) {
         const arrayCount = arrayMod.arrayCount || 3
-        console.log('[JsonPreview] processing array:', arrayPath, arrayMod)
 
         // 收集该数组的元素修改器，并区分是对象数组还是简单数组
         const elemModsForThisArray: Record<string, typeof modifiers[0]> = {}
@@ -78,16 +77,12 @@ export function JsonPreview() {
             const restPath = elemPath.replace(arrayPath + '[0]', '')
             const innerPath = restPath.startsWith('.') ? restPath.slice(1) : ''
 
-            console.log('[JsonPreview] elemPath:', elemPath, 'restPath:', restPath, 'innerPath:', innerPath)
-
             if (innerPath) {
               hasNestedFields = true
             }
             elemModsForThisArray[innerPath || 'value'] = elemMod
           }
         }
-
-        console.log('[JsonPreview] elemModsForThisArray:', elemModsForThisArray, 'hasNestedFields:', hasNestedFields)
 
         // 生成数组
         const arrayValue: unknown[] = []
@@ -125,7 +120,6 @@ export function JsonPreview() {
           } else {
             // 简单数组：直接生成值
             const elemMod = elemModsForThisArray['value']
-            console.log('[JsonPreview] simple array elemMod:', elemMod)
             if (elemMod) {
               let value: unknown
               if (elemMod.type === 'int') {
@@ -154,7 +148,6 @@ export function JsonPreview() {
             }
           }
         }
-        console.log('[JsonPreview] arrayValue:', arrayValue)
         setNestedValue(preview, arrayPath, arrayValue)
       }
 
